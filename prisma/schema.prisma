@@ -1,0 +1,120 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Categoria {
+  id      Int      @id @default(autoincrement())
+  nome    String   @unique @db.VarChar(60)
+  corHex  String   @default("#24427A") @map("cor_hex") @db.VarChar(7)
+  artigos Artigo[]
+
+  @@map("categorias")
+}
+
+model Utilizador {
+  id           Int       @id @default(autoincrement())
+  username     String    @unique @db.VarChar(50)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  nome         String    @db.VarChar(120)
+  role         Role      @default(Funcionario)
+  criadoEm     DateTime  @default(now()) @map("criado_em")
+  faturas      Fatura[]
+
+  @@map("utilizadores")
+}
+
+enum Role {
+  Admin
+  Funcionario
+}
+
+model Cliente {
+  id       Int      @id @default(autoincrement())
+  nome     String   @db.VarChar(150)
+  telefone String?  @db.VarChar(30)
+  endereco String?  @db.VarChar(255)
+  criadoEm DateTime @default(now()) @map("criado_em")
+  faturas  Fatura[]
+
+  @@map("clientes")
+}
+
+model Artigo {
+  id            Int           @id @default(autoincrement())
+  categoriaId   Int           @map("categoria_id")
+  categoria     Categoria     @relation(fields: [categoriaId], references: [id])
+  nome          String        @db.VarChar(150)
+  precoBase     Decimal       @map("preco_base") @db.Decimal(10, 2)
+  precoDesconto Decimal       @map("preco_desconto") @db.Decimal(10, 2)
+  disponivel    Boolean       @default(true)
+  itens         FaturaItem[]
+
+  @@index([categoriaId])
+  @@map("artigos")
+}
+
+enum StatusPagamento {
+  Pendente
+  Pago
+}
+
+enum StatusOperacional {
+  Pendente
+  Em_Processo         @map("Em Processo")
+  Pronto_para_Entrega @map("Pronto para Entrega")
+  Entregue
+  Devolvido
+}
+
+enum MetodoPagamento {
+  Dinheiro
+  M_Pesa               @map("M-Pesa")
+  e_Mola               @map("e-Mola")
+  mKesh
+  Cartao               @map("Cartão")
+  Transferencia_Bancaria @map("Transferência Bancária")
+}
+
+model Fatura {
+  id                Int               @id @default(autoincrement())
+  numero            String            @unique @db.VarChar(30)
+  clienteId         Int               @map("cliente_id")
+  cliente           Cliente           @relation(fields: [clienteId], references: [id])
+  utilizadorId      Int?              @map("utilizador_id")
+  utilizador        Utilizador?       @relation(fields: [utilizadorId], references: [id])
+  dataCriacao       DateTime          @default(now()) @map("data_criacao")
+  subtotal          Decimal           @default(0) @db.Decimal(10, 2)
+  desconto          Decimal           @default(0) @db.Decimal(10, 2)
+  total             Decimal           @default(0) @db.Decimal(10, 2)
+  status            StatusPagamento   @default(Pendente)
+  statusOperacional StatusOperacional @default(Pendente) @map("status_operacional")
+  metodoPagamento   MetodoPagamento?  @map("metodo_pagamento")
+  dataPagamento      DateTime?        @map("data_pagamento")
+  itens             FaturaItem[]
+
+  @@index([clienteId])
+  @@index([status])
+  @@map("faturas")
+}
+
+model FaturaItem {
+  id            Int      @id @default(autoincrement())
+  faturaId      Int      @map("fatura_id")
+  fatura        Fatura   @relation(fields: [faturaId], references: [id], onDelete: Cascade)
+  artigoId      Int?     @map("artigo_id")
+  artigo        Artigo?  @relation(fields: [artigoId], references: [id])
+  nomeArtigo    String   @map("nome_artigo") @db.VarChar(150)
+  categoria     String   @db.VarChar(60)
+  quantidade    Int      @default(1)
+  precoUnitario Decimal  @map("preco_unitario") @db.Decimal(10, 2)
+  subtotal      Decimal  @db.Decimal(10, 2)
+  comDesconto   Boolean  @default(true) @map("com_desconto")
+
+  @@index([faturaId])
+  @@map("fatura_itens")
+}

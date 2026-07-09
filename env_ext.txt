@@ -1,0 +1,2 @@
+DATABASE_URL="mysql://root:uykAvfupWNwmzeLWKufkfHwZChBiVXnm@hayabusa.proxy.rlwy.net:27363/railway"
+JWT_SECRET="jwdb6fiu2eg^*t027trd3d|H$SWCHIU%%cd238k/*14CFThm,k9976rfCDEww3rcg617yu73"
