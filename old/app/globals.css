@@ -1,7 +1,0 @@
-* { box-sizing: border-box; }
-html, body { margin: 0; padding: 0; width: 100%; min-height: 100%; }
-body { font-family: 'Inter', 'Segoe UI', sans-serif; background: #F6F8FB; color: #1B2440; }
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #E2E8F2; border-radius: 10px; }
-button { font-family: inherit; }
-a { color: inherit; }
