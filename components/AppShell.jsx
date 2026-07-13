@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Home, FileText, Users, Shirt, UserCog, LogOut, Menu, X, Shirt as LogoIcon, KeyRound } from "lucide-react";
+import { Home, FileText, Users, Shirt, UserCog, LogOut, Menu, X, Shirt as LogoIcon } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { C, displayFont, bodyFont } from "@/components/ui";
 
@@ -24,9 +24,8 @@ export default function AppShell({ children }) {
   const [mobileOpen, setMobileOpen] = useState(false);
 
   useEffect(() => {
-    if (user === null) { router.replace("/login"); return; }
-    if (user && user.mustChangePassword && pathname !== "/conta") router.replace("/conta");
-  }, [user, pathname]);
+    if (user === null) router.replace("/login");
+  }, [user]);
 
   // Fecha o menu automaticamente ao mudar de página (mobile)
   useEffect(() => { setMobileOpen(false); }, [pathname]);
@@ -42,7 +41,6 @@ export default function AppShell({ children }) {
     { href: "/artigos", label: "Serviços & Artigos", icon: Shirt },
   ];
   if (user.role === "Admin") items.push({ href: "/utilizadores", label: "Utilizadores", icon: UserCog });
-  items.push({ href: "/conta", label: "A Minha Conta", icon: KeyRound });
 
   // --- Estilos responsivos calculados em JS (sem depender de CSS + transform sempre ativo) ---
   const sidebarStyle = isMobile
@@ -79,12 +77,11 @@ export default function AppShell({ children }) {
         <div style={{ display: "flex", flexDirection: "column", gap: 4, flex: 1, overflowY: "auto" }}>
           {items.map(it => {
             const active = pathname === it.href;
-            const locked = user.mustChangePassword && it.href !== "/conta";
             return (
-              <button key={it.href} onClick={() => !locked && router.push(it.href)} disabled={locked} style={{
+              <button key={it.href} onClick={() => router.push(it.href)} style={{
                 display: "flex", alignItems: "center", gap: 11, padding: "11px 12px", borderRadius: 10, border: "none",
-                background: active ? "rgba(255,255,255,0.14)" : "transparent", color: locked ? "rgba(255,255,255,0.28)" : active ? "#fff" : "rgba(255,255,255,0.65)",
-                fontFamily: bodyFont, fontWeight: 600, fontSize: 14, cursor: locked ? "not-allowed" : "pointer", textAlign: "left"
+                background: active ? "rgba(255,255,255,0.14)" : "transparent", color: active ? "#fff" : "rgba(255,255,255,0.65)",
+                fontFamily: bodyFont, fontWeight: 600, fontSize: 14, cursor: "pointer", textAlign: "left"
               }}>
                 <it.icon size={17} /> {it.label}
               </button>

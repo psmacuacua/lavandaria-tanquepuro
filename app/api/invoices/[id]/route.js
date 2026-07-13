@@ -25,14 +25,6 @@ async function PATCH(req, { params }) {
   if (!session) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
   const id = Number(params.id);
-
-  if (session.role !== "Admin") {
-    const existing = await prisma.fatura.findUnique({ where: { id }, select: { utilizadorId: true } });
-    if (!existing || existing.utilizadorId !== session.id) {
-      return NextResponse.json({ error: "Só podes alterar pedidos que tu próprio atendeste." }, { status: 403 });
-    }
-  }
-
   const body = await req.json();
   const data = {};
 

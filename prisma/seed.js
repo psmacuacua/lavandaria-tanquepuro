@@ -35,7 +35,6 @@ async function main() {
       passwordHash,
       nome: "Administrador",
       role: "Admin",
-      mustChangePassword: false,
     },
   });
 

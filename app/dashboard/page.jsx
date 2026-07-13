@@ -4,7 +4,6 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, PieChart, Pie, Cell,
 } from "recharts";
 import AppShell from "@/components/AppShell";
-import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/apiClient";
 import {
   C, displayFont, bodyFont, monoFont, Card, Badge, formatMT, formatDate,
@@ -12,7 +11,6 @@ import {
 } from "@/components/ui";
 
 export default function DashboardPage() {
-  const { user } = useAuth();
   const [invoices, setInvoices] = useState([]);
   const [clients, setClients] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -62,10 +60,8 @@ export default function DashboardPage() {
           }}>
             <div>
               <div style={{ color: C.gold, fontSize: 12, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>LAVANDARIA TANQUE PURO · PAINEL</div>
-              <h1 style={{ fontFamily: displayFont, fontSize: 27, color: "#fff", marginBottom: 6 }}>{user?.role === "Admin" ? "Resumo financeiro" : "Os meus pedidos"}</h1>
-              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 13.5, maxWidth: 420 }}>
-                {user?.role === "Admin" ? "Faturação, pagamentos pendentes e desempenho por categoria de serviço." : "Resumo dos pedidos que atendeste e do seu estado atual."}
-              </div>
+              <h1 style={{ fontFamily: displayFont, fontSize: 27, color: "#fff", marginBottom: 6 }}>Resumo financeiro</h1>
+              <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 13.5, maxWidth: 420 }}>Faturação, pagamentos pendentes e desempenho por categoria de serviço.</div>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12, padding: "12px 20px", textAlign: "center" }}>

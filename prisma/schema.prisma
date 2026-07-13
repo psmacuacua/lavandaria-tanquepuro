@@ -17,14 +17,13 @@ model Categoria {
 }
 
 model Utilizador {
-  id                 Int       @id @default(autoincrement())
-  username           String    @unique @db.VarChar(50)
-  passwordHash       String    @map("password_hash") @db.VarChar(255)
-  nome               String    @db.VarChar(120)
-  role               Role      @default(Funcionario)
-  mustChangePassword Boolean   @default(true) @map("must_change_password")
-  criadoEm           DateTime  @default(now()) @map("criado_em")
-  faturas            Fatura[]
+  id           Int       @id @default(autoincrement())
+  username     String    @unique @db.VarChar(50)
+  passwordHash String    @map("password_hash") @db.VarChar(255)
+  nome         String    @db.VarChar(120)
+  role         Role      @default(Funcionario)
+  criadoEm     DateTime  @default(now()) @map("criado_em")
+  faturas      Fatura[]
 
   @@map("utilizadores")
 }
@@ -115,8 +114,6 @@ model FaturaItem {
   precoUnitario Decimal  @map("preco_unitario") @db.Decimal(10, 2)
   subtotal      Decimal  @db.Decimal(10, 2)
   comDesconto   Boolean  @default(true) @map("com_desconto")
-  condicao      Json?    @map("condicao")
-  sobretaxa     Decimal  @default(0) @map("sobretaxa") @db.Decimal(10, 2)
 
   @@index([faturaId])
   @@map("fatura_itens")

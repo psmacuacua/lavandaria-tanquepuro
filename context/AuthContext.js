@@ -9,16 +9,14 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(undefined); // undefined = a carregar, null = sem sessão
   const router = useRouter();
 
-  function refreshUser() {
-    return api.get("/auth/session").then(d => setUser(d.user)).catch(() => setUser(null));
-  }
-
-  useEffect(() => { refreshUser(); }, []);
+  useEffect(() => {
+    api.get("/auth/session").then(d => setUser(d.user)).catch(() => setUser(null));
+  }, []);
 
   async function login(username, password) {
     const data = await api.post("/auth/login", { username, password });
     setUser(data.user);
-    router.push(data.user.mustChangePassword ? "/conta" : "/dashboard");
+    router.push("/dashboard");
   }
 
   async function logout() {
@@ -27,7 +25,7 @@ export function AuthProvider({ children }) {
     router.push("/login");
   }
 
-  return <AuthContext.Provider value={{ user, login, logout, refreshUser }}>{children}</AuthContext.Provider>;
+  return <AuthContext.Provider value={{ user, login, logout }}>{children}</AuthContext.Provider>;
 }
 
 export function useAuth() {
