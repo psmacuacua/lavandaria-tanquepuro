@@ -4,7 +4,7 @@ const { getSessionFromRequest } = require("@/lib/auth");
 const bcrypt = require("bcryptjs");
 
 function serialize(u) {
-  return { id: u.id, username: u.username, nome: u.nome, role: u.role };
+  return { id: u.id, username: u.username, nome: u.nome, role: u.role, mustChangePassword: u.mustChangePassword };
 }
 
 async function GET(req) {

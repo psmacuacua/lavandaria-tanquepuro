@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useMemo, useState } from "react";
-import { FileText, Search, Trash2, Check, X, ChevronRight, Phone, MapPin, MessageSquare } from "lucide-react";
+import { FileText, Search, Trash2, Check, X, ChevronRight, Phone, MapPin, MessageSquare, ClipboardCheck, AlertTriangle } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/apiClient";
@@ -9,6 +9,8 @@ import {
   CATEGORIES, ORDER_STATUSES, STATUS_META, PAYMENT_METHODS, formatMT, formatDate,
   tabStyle, chipStyle, thStyle, tdStyle,
 } from "@/components/ui";
+import InspectionModal from "@/components/InspectionModal";
+import { novaCondicaoVazia, condicaoTemAvisos, calcularSobretaxa } from "@/components/inspection";
 
 export default function FaturacaoPage() {
   const { user } = useAuth();
@@ -45,27 +47,36 @@ export default function FaturacaoPage() {
     setCart(prev => {
       const existing = prev.find(p => p.articleId === article.id);
       if (existing) return prev.map(p => p.articleId === article.id ? { ...p, qtd: p.qtd + 1 } : p);
-      return [...prev, { articleId: article.id, nome: article.nome, categoria: article.categoria, precoBase: article.precoBase, precoDesconto: article.precoDesconto, qtd: 1, comDesconto: true }];
+      return [...prev, { articleId: article.id, nome: article.nome, categoria: article.categoria, precoBase: article.precoBase, precoDesconto: article.precoDesconto, qtd: 1, comDesconto: true, condicao: novaCondicaoVazia() }];
     });
   }
   function updateQtd(id, qtd) { setCart(prev => prev.map(p => p.articleId === id ? { ...p, qtd: Math.max(1, qtd) } : p)); }
   function toggleDesconto(id) { setCart(prev => prev.map(p => p.articleId === id ? { ...p, comDesconto: !p.comDesconto } : p)); }
   function removeFromCart(id) { setCart(prev => prev.filter(p => p.articleId !== id)); }
+  function saveCondicao(id, condicao) { setCart(prev => prev.map(p => p.articleId === id ? { ...p, condicao } : p)); setInspectingId(null); }
+
+  const [inspectingId, setInspectingId] = useState(null);
 
   const cartLines = cart.map(c => {
     const unit = c.comDesconto ? c.precoDesconto : c.precoBase;
-    return { ...c, precoUnit: unit, subtotal: unit * c.qtd };
+    const sobretaxa = calcularSobretaxa(c.condicao);
+    return { ...c, precoUnit: unit, subtotal: unit * c.qtd + sobretaxa, sobretaxa };
   });
   const subtotalBase = cartLines.reduce((s, c) => s + c.precoBase * c.qtd, 0);
+  const totalSobretaxas = cartLines.reduce((s, c) => s + c.sobretaxa, 0);
   const total = cartLines.reduce((s, c) => s + c.subtotal, 0);
-  const desconto = subtotalBase - total;
+  const desconto = subtotalBase - (total - totalSobretaxas);
 
   async function finalizarFatura(statusInicial) {
     if (cartLines.length === 0) return;
     const payload = {
       clienteId, subtotal: subtotalBase, desconto, total,
       status: statusInicial, metodoPagamento: statusInicial === "Pago" ? pendingMethod : null,
-      itens: cartLines.map(c => ({ artigoId: c.articleId, nome: c.nome, categoria: c.categoria, qtd: c.qtd, precoUnit: c.precoUnit, subtotal: c.subtotal, comDesconto: c.comDesconto })),
+      itens: cartLines.map(c => ({
+        artigoId: c.articleId, nome: c.nome, categoria: c.categoria, qtd: c.qtd,
+        precoUnit: c.precoUnit, subtotal: c.subtotal, comDesconto: c.comDesconto,
+        condicao: c.condicao, sobretaxa: c.sobretaxa,
+      })),
     };
     const d = await api.post("/invoices", payload);
     setInvoices([d.invoice, ...invoices]);
@@ -101,11 +112,11 @@ export default function FaturacaoPage() {
   return (
     <AppShell>
       <h1 style={{ fontFamily: displayFont, fontSize: 26, color: C.ink, marginBottom: 4 }}>Faturação & Pagamentos</h1>
-      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>Cria faturas e controla o estado dos pagamentos</div>
+      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>{user?.role === "Admin" ? "Cria faturas e controla o estado dos pagamentos" : "Cria pedidos e acompanha os que atendeste"}</div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
         <button onClick={() => setTab("nova")} style={tabStyle(tab === "nova")}>Nova Fatura</button>
-        <button onClick={() => setTab("lista")} style={tabStyle(tab === "lista")}>Faturas ({invoices.length})</button>
+        <button onClick={() => setTab("lista")} style={tabStyle(tab === "lista")}>{user?.role === "Admin" ? "Faturas" : "Meus Pedidos"} ({invoices.length})</button>
       </div>
 
       {loading ? <div style={{ color: C.inkSoft }}>A carregar...</div> : (
@@ -159,7 +170,7 @@ export default function FaturacaoPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 260, overflowY: "auto", marginBottom: 12 }}>
                   {cartLines.length === 0 && <div style={{ color: C.inkSoft, fontSize: 13 }}>Adiciona artigos da lista à esquerda.</div>}
                   {cartLines.map(c => (
-                    <div key={c.articleId} style={{ border: `1px solid ${C.border}`, borderRadius: 9, padding: 9 }}>
+                    <div key={c.articleId} style={{ border: `1px solid ${condicaoTemAvisos(c.condicao) ? C.amber : C.border}`, borderRadius: 9, padding: 9 }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{c.nome}</div>
                         <button onClick={() => removeFromCart(c.articleId)} style={{ border: "none", background: "none", cursor: "pointer" }}><Trash2 size={14} color={C.red} /></button>
@@ -171,13 +182,36 @@ export default function FaturacaoPage() {
                         </label>
                         <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 13 }}>{formatMT(c.subtotal)}</div>
                       </div>
+                      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 7, paddingTop: 7, borderTop: `1px dashed ${C.border}` }}>
+                        <button onClick={() => setInspectingId(c.articleId)} style={{
+                          display: "inline-flex", alignItems: "center", gap: 5, border: "none", background: "none", cursor: "pointer",
+                          color: condicaoTemAvisos(c.condicao) ? C.amber : C.inkSoft, fontSize: 11.5, fontWeight: 600, fontFamily: bodyFont
+                        }}>
+                          <ClipboardCheck size={13} /> {condicaoTemAvisos(c.condicao) ? "Ver inspeção (com avisos)" : "Inspecionar artigo"}
+                        </button>
+                        {c.sobretaxa > 0 && (
+                          <span style={{ display: "inline-flex", alignItems: "center", gap: 4, fontSize: 10.5, fontWeight: 700, color: C.red }}>
+                            <AlertTriangle size={11} /> +{formatMT(c.sobretaxa)}
+                          </span>
+                        )}
+                      </div>
                     </div>
                   ))}
                 </div>
 
+                {inspectingId !== null && (() => {
+                  const item = cart.find(c => c.articleId === inspectingId);
+                  if (!item) return null;
+                  return (
+                    <InspectionModal itemNome={item.nome} condicao={item.condicao || novaCondicaoVazia()}
+                      onSave={cond => saveCondicao(inspectingId, cond)} onClose={() => setInspectingId(null)} />
+                  );
+                })()}
+
                 <div style={{ borderTop: `1px solid ${C.border}`, paddingTop: 10, fontFamily: monoFont, fontSize: 13.5, marginBottom: 12 }}>
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>Subtotal</span><span>{formatMT(subtotalBase)}</span></div>
                   <div style={{ display: "flex", justifyContent: "space-between", color: C.mint }}><span>Desconto</span><span>-{formatMT(desconto)}</span></div>
+                  {totalSobretaxas > 0 && <div style={{ display: "flex", justifyContent: "space-between", color: C.red }}><span>Sobretaxas (tratamento especial)</span><span>+{formatMT(totalSobretaxas)}</span></div>}
                   <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 17, color: C.ink }}><span>Total</span><span>{formatMT(total)}</span></div>
                 </div>
 
@@ -283,6 +317,11 @@ function InvoiceDetail({ invoice, client, onClose, onMarkPaid, onSetMethod, onSe
               <div key={i} style={{ fontSize: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>{it.qtd}x {it.nome}</span><span>{formatMT(it.subtotal)}</span></div>
                 <div style={{ color: C.inkSoft, fontSize: 10.5 }}>{it.categoria} · {formatMT(it.precoUnit)}/un {it.comDesconto ? "(desconto)" : ""}</div>
+                {condicaoTemAvisos(it.condicao) && (
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, color: C.amberDark || C.amber, fontSize: 10, marginTop: 2 }}>
+                    <ClipboardCheck size={10} /> Inspeção com avisos registados{it.sobretaxa > 0 ? ` · tratamento especial +${formatMT(it.sobretaxa)}` : ""}
+                  </div>
+                )}
               </div>
             ))}
           </div>
