@@ -89,7 +89,56 @@ Para usar outro fornecedor de SMS (ex: um gateway local moçambicano), basta alt
 `sendViaProvider` em `lib/sms.js` — o resto do módulo (templates, validação de número,
 envio em massa) mantém-se igual.
 
-## 7. Estrutura do projeto
+## 7. Permissões: funcionário vs admin
+
+- **Admin**: vê tudo — todas as faturas/pedidos, todos os clientes, gestão de artigos,
+  gestão de utilizadores, painel financeiro completo.
+- **Funcionário**: só vê e só pode alterar os **pedidos que ele próprio criou**
+  (filtrado no servidor, em `app/api/invoices/route.js` e `app/api/invoices/[id]/route.js`
+  — não é apenas um filtro visual, um funcionário não consegue ler nem alterar pela API
+  uma fatura que não seja sua). O painel e a lista de faturação mudam automaticamente o
+  texto para "Os meus pedidos" quando o utilizador não é Admin.
+- Só o Admin acede à página **Utilizadores**.
+
+## 8. Passwords: alteração própria e primeiro login obrigatório
+
+- Todos os utilizadores têm uma página **"A Minha Conta"** (`/conta`) para alterar a sua
+  própria password (pede a password atual + nova + confirmação).
+- Utilizadores **novos** (criados pelo Admin) e utilizadores cuja password foi **reposta
+  pelo Admin** ficam marcados com `mustChangePassword=true`: no próximo login são
+  redirecionados automaticamente para `/conta` e não conseguem aceder ao resto da aplicação
+  até definirem uma password própria (o menu lateral fica bloqueado, só "A Minha Conta" e
+  "Sair" ficam ativos).
+- O Admin pode, na página **Utilizadores**:
+  - **Editar** nome, username e função de qualquer utilizador (ícone de lápis);
+  - **Repor a password** de qualquer utilizador sem precisar de saber a antiga
+    (ícone de chave) — isso marca automaticamente `mustChangePassword=true` para essa conta.
+- O utilizador `admin` semeado (`npm run db:setup`) já começa com `mustChangePassword=false`
+  para não obrigar a trocar logo a password de demonstração — mas é recomendável trocá-la
+  na primeira utilização real.
+
+## 9. Ficha de inspeção do artigo (antes da lavagem)
+
+Na **Nova Fatura**, cada artigo adicionado ao carrinho tem um botão **"Inspecionar artigo"**
+que abre uma ficha por checklist (seleção, não texto livre) para o operador registar o
+estado da peça antes de a lavar — útil para provar ao cliente que um defeito já existia:
+
+1. **Defeitos e danos pré-existentes** — furos/rasgos/descosturas, desgaste excessivo/pilling,
+   botões frouxos ou em falta, zíper travado/quebrado, elástico vencido, fecho danificado.
+2. **Manchas e sujidades críticas** — mancha visível (com localização), oxidação/mofo,
+   desbotamento, e um destaque especial para **manchas difíceis** (café, sangue, tinta,
+   vinho) que **aplicam automaticamente uma sobretaxa de +50 MT** a esse artigo.
+3. **Características originais** — marca, tamanho, cor exata, se a etiqueta de lavagem
+   está cortada/ilegível.
+4. **Itens esquecidos nos bolsos** — confirmação de que os bolsos foram esvaziados na
+   frente do cliente, e o que foi encontrado.
+5. **Deformações** — lã encolhida, gola torta, terno desalinhado.
+
+Esta ficha fica gravada por artigo dentro da fatura (`fatura_itens.condicao`, campo JSON) e
+aparece resumida no recibo/detalhe da fatura, com a sobretaxa destacada quando aplicável.
+A sobretaxa entra automaticamente no total da fatura.
+
+## 10. Estrutura do projeto
 
 ```
 prisma/schema.prisma       modelos da base de dados (categorias, clientes, utilizadores,
@@ -108,9 +157,12 @@ app/faturacao, app/clientes,
 app/artigos, app/utilizadores  páginas da aplicação
 ```
 
-## 8. Notas para produção
+## 11. Notas para produção
 
 - As palavras-passe já ficam com hash (`bcryptjs`) na base de dados — nunca em texto simples.
 - Troca `JWT_SECRET` por um valor longo e aleatório antes de publicar.
 - Ativa HTTPS e mantém `secure: true` nos cookies (já está condicionado a `NODE_ENV=production`).
 - Considera adicionar limites de tentativas de login (rate limiting) antes de publicar publicamente.
+
+> Se já tinhas corrido `npm run db:setup` antes desta versão, corre `npx prisma migrate dev`
+> outra vez para aplicar os novos campos (`must_change_password`, `condicao`, `sobretaxa`).

@@ -19,6 +19,7 @@ function serialize(f) {
     itens: f.itens.map(it => ({
       nome: it.nomeArtigo, categoria: it.categoria, qtd: it.quantidade,
       precoUnit: Number(it.precoUnitario), subtotal: Number(it.subtotal), comDesconto: it.comDesconto,
+      condicao: it.condicao || null, sobretaxa: Number(it.sobretaxa || 0),
     })),
   };
 }
@@ -28,6 +29,7 @@ async function GET(req) {
   if (!session) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
   const faturas = await prisma.fatura.findMany({
+    where: session.role === "Admin" ? {} : { utilizadorId: session.id },
     include: { itens: true, utilizador: true },
     orderBy: { dataCriacao: "desc" },
   });
@@ -66,6 +68,8 @@ async function POST(req) {
           precoUnitario: it.precoUnit,
           subtotal: it.subtotal,
           comDesconto: !!it.comDesconto,
+          condicao: it.condicao || null,
+          sobretaxa: it.sobretaxa || 0,
         })),
       },
     },

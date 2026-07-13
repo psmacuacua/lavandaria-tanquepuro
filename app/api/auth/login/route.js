@@ -21,7 +21,7 @@ async function POST(req) {
 
   const token = signSession(user);
   const res = NextResponse.json({
-    user: { id: user.id, username: user.username, nome: user.nome, role: user.role },
+    user: { id: user.id, username: user.username, nome: user.nome, role: user.role, mustChangePassword: user.mustChangePassword },
   });
   res.cookies.set(COOKIE_NAME, token, {
     httpOnly: true,
