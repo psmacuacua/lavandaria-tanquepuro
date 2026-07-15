@@ -44,7 +44,7 @@ export default function DashboardPage() {
     return { hoje, mes, pendente, totalFaturas: invoices.length, porCategoria, porStatusOp };
   }, [invoices]);
 
-  const chartData = CATEGORIES.map(c => ({ name: c.replace("Lavagem ", "Lav. "), total: Math.round(stats.porCategoria[c] || 0) }));
+  const chartData = CATEGORIES.map(c => ({ name: c.replace("Lavagem ", "Lava. "), total: Math.round(stats.porCategoria[c] || 0) }));
   const donutData = ORDER_STATUSES.map(s => ({ name: s, value: stats.porStatusOp[s] || 0 })).filter(d => d.value > 0);
   const recentInvoices = [...invoices].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 6);
   const clientName = id => clients.find(c => c.id === id)?.nome || "—";
