@@ -1,9 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Home, FileText, Users, Shirt, UserCog, LogOut, Menu, X, Shirt as LogoIcon, KeyRound } from "lucide-react";
+import { Home, FileText, Users, Shirt, UserCog, LogOut, Menu, X, KeyRound } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { C, displayFont, bodyFont } from "@/components/ui";
+import LogoMark from "@/components/LogoMark";
 
 function useIsMobile(breakpoint = 880) {
   const [isMobile, setIsMobile] = useState(false);
@@ -66,7 +67,7 @@ export default function AppShell({ children }) {
         <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "6px 10px 22px" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
             <div style={{ width: 34, height: 34, borderRadius: 10, background: "rgba(255,255,255,0.12)", display: "flex", alignItems: "center", justifyContent: "center" }}>
-              <LogoIcon color="#fff" size={18} />
+              <LogoMark size={19} color="#fff" />
             </div>
             <div style={{ fontFamily: displayFont, color: "#fff", fontWeight: 700, fontSize: 15.5, lineHeight: 1.15 }}>Lavandaria<br />Tanque Puro</div>
           </div>

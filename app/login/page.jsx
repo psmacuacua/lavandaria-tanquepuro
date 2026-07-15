@@ -1,8 +1,8 @@
 "use client";
 import React, { useState } from "react";
-import { Shirt } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { C, displayFont, bodyFont, Input, Label, Btn } from "@/components/ui";
+import LogoMark from "@/components/LogoMark";
 
 export default function LoginPage() {
   const { login } = useAuth();
@@ -34,7 +34,7 @@ export default function LoginPage() {
             width: 56, height: 56, borderRadius: 16, background: "rgba(255,255,255,0.12)", display: "flex",
             alignItems: "center", justifyContent: "center", margin: "0 auto 14px", border: "1px solid rgba(255,255,255,0.25)"
           }}>
-            <Shirt color="#fff" size={28} />
+            <LogoMark size={30} color="#fff" />
           </div>
           <div style={{ fontFamily: displayFont, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: 0.3 }}>Lavandaria Tanque Puro</div>
           <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13.5, marginTop: 4 }}>Gestão de serviços, faturas e caixa</div>
