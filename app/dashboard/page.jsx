@@ -49,13 +49,6 @@ export default function DashboardPage() {
   const recentInvoices = [...invoices].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 6);
   const clientName = id => clients.find(c => c.id === id)?.nome || "—";
 
-
-  useEffect(() => {
-    if (chartData.length > 0) {
-      alert("Dados do Gráfico:\n" + JSON.stringify(chartData, null, 2));
-    }
-  }, [chartData]);
-
   return (
     <AppShell>
       {loading ? (
@@ -128,6 +121,7 @@ export default function DashboardPage() {
           <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 16, marginBottom: 16 }}>
             <Card>
               <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink, marginBottom: 14 }}>Faturação por serviço</div>
+              <pre>{JSON.stringify(chartData, null, 2)}</pre>
               <ResponsiveContainer width="100%" height={230}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
