@@ -64,7 +64,7 @@ export default function DashboardPage() {
               <div style={{ color: C.gold, fontSize: 12, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>LAVANDARIA TANQUE PURO · PAINEL</div>
               <h1 style={{ fontFamily: displayFont, fontSize: 27, color: "#fff", marginBottom: 6 }}>{user?.role === "Admin" ? "Resumo financeiro" : "Os meus pedidos"}</h1>
               <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 13.5, maxWidth: 420 }}>
-                {user?.role === "Admin" ? "Facturação, pagamentos pendentes e desempenho por categoria de serviço." : "Resumo dos pedidos que atendeste e do seu estado atual."}
+                {user?.role === "Admin" ? "Facturação, pagamentos pendentes e desempenho por categoria de serviço." : "Resumo dos pedidos que atendeste e do seu estado actual."}
               </div>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
