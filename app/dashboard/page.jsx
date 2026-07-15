@@ -37,14 +37,13 @@ export default function DashboardPage() {
       if (d.toDateString() === todayKey && inv.status === "Pago") hoje += inv.total;
       if ((d.getFullYear() + "-" + d.getMonth()) === monthKey && inv.status === "Pago") mes += inv.total;
       if (inv.status === "Pendente") pendente += inv.total;
-      inv.itens.forEach(it => { porCategoria[it.categoria] = (porCategoria[it.categoria] || 0) + it.subtotal; });
+      inv.itens.forEach(it => {
+        porCategoria[it.categoria] = (porCategoria[it.categoria] || 0) + it.subtotal; 
+        console.log("Encontrei item de Sofá:", it);
+      });
       const so = inv.statusOperacional || "Pendente";
       porStatusOp[so] = (porStatusOp[so] || 0) + 1;
     });
-
-    // LOG PARA VERIFICAR O OBJETO FINAL:
-    console.log("Objeto porCategoria:", porCategoria);
-    console.log("Lista CATEGORIES definida:", CATEGORIES);
     return { hoje, mes, pendente, totalFaturas: invoices.length, porCategoria, porStatusOp };
   }, [invoices]);
 
