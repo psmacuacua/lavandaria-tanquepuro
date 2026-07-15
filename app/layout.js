@@ -3,7 +3,7 @@ import { AuthProvider } from "@/context/AuthContext";
 
 export const metadata = {
   title: "Lavandaria Tanque Puro",
-  description: "Gestão de lavandaria — faturação, pagamentos, serviços e artigos",
+  description: "Gestão de lavandaria — facturação, pagamentos, serviços e artigos",
 };
 
 export default function RootLayout({ children }) {
