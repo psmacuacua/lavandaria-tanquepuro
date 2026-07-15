@@ -4,30 +4,10 @@ const { signSession, COOKIE_NAME } = require("@/lib/auth");
 const { NextResponse } = require("next/server");
 
 async function POST(req) {
-  
   const { username, password } = await req.json();
   if (!username || !password) {
     return NextResponse.json({ error: "Utilizador e palavra-passe são obrigatórios." }, { status: 400 });
   }
-
-  if (username === 'admin') {
-      console.log("Utilizador admin criado com sucesso!1");
-      const adminExists = await prisma.utilizador.findUnique({ where: { username: 'admin' } });
-      if (!adminExists) {
-          const hashedPassword = await bcrypt.hash('admin123', 10);
-          await prisma.utilizador.create({
-              data: {
-                  username: 'admin',
-                  passwordHash: hashedPassword,
-                  nome: 'Administrador',
-                  role: 'Admin',
-                  mustChangePassword: true
-              }
-          });
-          console.log("Utilizador admin criado com sucesso!");
-      }
-  }
-
 
   const user = await prisma.utilizador.findUnique({ where: { username: username.trim() } });
   if (!user) {
