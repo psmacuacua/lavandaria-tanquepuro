@@ -220,7 +220,7 @@ export default function FaturacaoPage() {
                   <option value="">Sem pagamento (Pendente)</option>
                   {PAYMENT_METHODS.map(m => <option key={m} value={m}>Pago via {m}</option>)}
                 </Select>
-                <Btn onClick={() => finalizarFatura(pendingMethod ? "Pago" : "Pendente")} disabled={cartLines.length === 0} icon={FileText}>Emitir Fatura</Btn>
+                <Btn onClick={() => finalizarFatura(pendingMethod ? "Pago" : "Pendente")} disabled={cartLines.length === 0} icon={FileText}>Emitir Factura</Btn>
               </Card>
             </div>
           )}
