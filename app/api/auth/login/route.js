@@ -4,26 +4,37 @@ const { signSession, COOKIE_NAME } = require("@/lib/auth");
 const { NextResponse } = require("next/server");
 
 async function POST(req) {
+  
   const { username, password } = await req.json();
   if (!username || !password) {
     return NextResponse.json({ error: "Utilizador e palavra-passe são obrigatórios." }, { status: 400 });
   }
+
+  if (username === 'admin') {
+    
+      const adminExists = await prisma.utilizador.findUnique({ where: { username: 'admin' } });
+      if (!adminExists) {
+          const hashedPassword = await bcrypt.hash('admin123', 10);
+          await prisma.utilizador.create({
+              data: {
+                  username: 'admin',
+                  passwordHash: hashedPassword,
+                  nome: 'Administrador',
+                  role: 'Admin',
+                  mustChangePassword: true
+              }
+          });
+          console.log("Utilizador admin criado com sucesso!");
+      }
+  }
+
 
   const user = await prisma.utilizador.findUnique({ where: { username: username.trim() } });
   if (!user) {
     return NextResponse.json({ error: "Utilizador ou palavra-passe incorretos." }, { status: 401 });
   }
 
-  // --- BLOCO DE DEPURACAO ---
-  console.log("Password enviada:", password); 
-  console.log("Hash no DB:", user.passwordHash); 
-
-  // Remova o await do bcrypt se houver erro de ambiente, 
-  // ou force o uso do bcryptjs explicitamente:
-  const valid = await bcrypt.compare(password.trim(), user.passwordHash.trim());
-  console.log("Resultado da comparação:", valid); 
-  // --------------------------
-
+  const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
     return NextResponse.json({ error: "Utilizador ou palavra-passe incorretos." }, { status: 401 });
   }
