@@ -18,7 +18,9 @@ async function POST(req) {
   console.log("Password enviada:", password); 
   console.log("Hash no DB:", user.passwordHash); 
 
-  const valid = await bcrypt.compare(password, user.passwordHash);
+  // Remova o await do bcrypt se houver erro de ambiente, 
+  // ou force o uso do bcryptjs explicitamente:
+  const valid = await bcrypt.compare(password.trim(), user.passwordHash.trim());
   console.log("Resultado da comparação:", valid); 
   // --------------------------
 
