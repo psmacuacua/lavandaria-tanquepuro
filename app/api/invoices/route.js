@@ -40,10 +40,7 @@ async function POST(req) {
   const session = getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
-  
-
   const body = await req.json();
-  console.log("DADOS RECEBIDOS NO POST:", body); // ADICIONE ISTO!
   const { clienteId, itens, subtotal, desconto, total, status, metodoPagamento } = body;
 
   if (!clienteId || !Array.isArray(itens) || itens.length === 0) {
