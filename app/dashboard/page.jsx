@@ -124,7 +124,7 @@ export default function DashboardPage() {
               <ResponsiveContainer width="100%" height={230}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
-                  <XAxis dataKey="name" tick={{ fontSize: 9, fontFamily: bodyFont, fill: C.inkSoft }} />
+                  <XAxis dataKey="name" tick={{ fontSize: 12, fontFamily: bodyFont, fill: C.inkSoft }} />
                   <YAxis tick={{ fontSize: 11, fontFamily: bodyFont, fill: C.inkSoft }} />
                   <Tooltip formatter={v => formatMT(v)} contentStyle={{ borderRadius: 10, fontFamily: bodyFont, fontSize: 13 }} />
                   <Bar dataKey="total" fill={C.cobalt} radius={[6, 6, 0, 0]} />
