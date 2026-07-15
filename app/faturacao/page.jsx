@@ -319,7 +319,7 @@ function InvoiceDetail({ invoice, client, onClose, onMarkPaid, onSetMethod, onSe
                 <div style={{ color: C.inkSoft, fontSize: 10.5 }}>{it.categoria} · {formatMT(it.precoUnit)}/un {it.comDesconto ? "(desconto)" : ""}</div>
                 {condicaoTemAvisos(it.condicao) && (
                   <div style={{ display: "flex", alignItems: "center", gap: 4, color: C.amberDark || C.amber, fontSize: 10, marginTop: 2 }}>
-                    <ClipboardCheck size={10} /> Inspeção com avisos registados{it.sobretaxa > 0 ? ` · tratamento especial +${formatMT(it.sobretaxa)}` : ""}
+                    <ClipboardCheck size={10} /> Inspecção com avisos registados{it.sobretaxa > 0 ? ` · tratamento especial +${formatMT(it.sobretaxa)}` : ""}
                   </div>
                 )}
               </div>
