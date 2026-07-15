@@ -14,7 +14,14 @@ async function POST(req) {
     return NextResponse.json({ error: "Utilizador ou palavra-passe incorretos." }, { status: 401 });
   }
 
+  // --- BLOCO DE DEPURACAO ---
+  console.log("Password enviada:", password); 
+  console.log("Hash no DB:", user.passwordHash); 
+
   const valid = await bcrypt.compare(password, user.passwordHash);
+  console.log("Resultado da comparação:", valid); 
+  // --------------------------
+
   if (!valid) {
     return NextResponse.json({ error: "Utilizador ou palavra-passe incorretos." }, { status: 401 });
   }
