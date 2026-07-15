@@ -116,7 +116,7 @@ export default function FaturacaoPage() {
 
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
         <button onClick={() => setTab("nova")} style={tabStyle(tab === "nova")}>Nova Factura</button>
-        <button onClick={() => setTab("lista")} style={tabStyle(tab === "lista")}>{user?.role === "Admin" ? "Faturas" : "Meus Pedidos"} ({invoices.length})</button>
+        <button onClick={() => setTab("lista")} style={tabStyle(tab === "lista")}>{user?.role === "Admin" ? "Facturas" : "Meus Pedidos"} ({invoices.length})</button>
       </div>
 
       {loading ? <div style={{ color: C.inkSoft }}>A carregar...</div> : (
@@ -304,7 +304,7 @@ function InvoiceDetail({ invoice, client, onClose, onMarkPaid, onSetMethod, onSe
         <div style={{ padding: "22px 26px 26px", fontFamily: monoFont }}>
           <div style={{ textAlign: "center", marginBottom: 16 }}>
             <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 17, color: C.ink }}>LAVANDARIA TANQUE PURO</div>
-            <div style={{ fontSize: 11.5, color: C.inkSoft }}>Recibo / Fatura {invoice.numero}</div>
+            <div style={{ fontSize: 11.5, color: C.inkSoft }}>Recibo / Factura {invoice.numero}</div>
             <div style={{ fontSize: 11, color: C.inkSoft }}>{formatDate(invoice.data)}</div>
           </div>
           <div style={{ borderTop: `1px dashed ${C.border}`, borderBottom: `1px dashed ${C.border}`, padding: "10px 0", marginBottom: 12, fontSize: 12.5 }}>
