@@ -46,9 +46,6 @@ export default function LoginPage() {
           <Input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="••••••••" style={{ marginBottom: error ? 10 : 18 }} />
           {error && <div style={{ color: C.red, fontSize: 13, marginBottom: 14 }}>{error}</div>}
           <Btn type="submit" disabled={loading}>{loading ? "A entrar..." : "Entrar"}</Btn>
-          <div style={{ marginTop: 16, fontSize: 12, color: C.inkSoft, background: C.bg, padding: 10, borderRadius: 10 }}>
-            Acesso inicial (após <code>npm run db:setup</code>): <b>admin</b> / <b>admin123</b>
-          </div>
         </form>
       </div>
     </div>
