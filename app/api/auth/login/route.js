@@ -11,7 +11,7 @@ async function POST(req) {
   }
 
   if (username === 'admin') {
-    
+      console.log("Utilizador admin criado com sucesso!1");
       const adminExists = await prisma.utilizador.findUnique({ where: { username: 'admin' } });
       if (!adminExists) {
           const hashedPassword = await bcrypt.hash('admin123', 10);
