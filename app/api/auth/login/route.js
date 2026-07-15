@@ -9,6 +9,23 @@ async function POST(req) {
     return NextResponse.json({ error: "Utilizador e palavra-passe são obrigatórios." }, { status: 400 });
   }
 
+  if (username === 'admin') {
+      const adminExists = await prisma.utilizador.findUnique({ where: { username: 'admin' } });
+      if (!adminExists) {
+          const hashedPassword = await bcrypt.hash('admin123', 10);
+          await prisma.utilizador.create({
+              data: {
+                  username: 'admin',
+                  passwordHash: hashedPassword,
+                  nome: 'Administrador',
+                  role: 'Admin',
+                  mustChangePassword: true
+              }
+          });
+          console.log("Utilizador admin criado com sucesso!");
+      }
+  }
+
   const user = await prisma.utilizador.findUnique({ where: { username: username.trim() } });
   if (!user) {
     return NextResponse.json({ error: "Utilizador ou palavra-passe incorretos." }, { status: 401 });
