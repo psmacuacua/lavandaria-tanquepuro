@@ -41,6 +41,10 @@ export default function DashboardPage() {
       const so = inv.statusOperacional || "Pendente";
       porStatusOp[so] = (porStatusOp[so] || 0) + 1;
     });
+
+    // LOG PARA VERIFICAR O OBJETO FINAL:
+    console.log("Objeto porCategoria:", porCategoria);
+    console.log("Lista CATEGORIES definida:", CATEGORIES);
     return { hoje, mes, pendente, totalFaturas: invoices.length, porCategoria, porStatusOp };
   }, [invoices]);
 
