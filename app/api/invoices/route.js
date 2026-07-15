@@ -37,6 +37,7 @@ async function GET(req) {
 }
 
 async function POST(req) {
+  console.log("Entrou", body); // ADICIONE ISTO!
   const session = getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
