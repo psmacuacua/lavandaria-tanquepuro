@@ -37,10 +37,7 @@ export default function DashboardPage() {
       if (d.toDateString() === todayKey && inv.status === "Pago") hoje += inv.total;
       if ((d.getFullYear() + "-" + d.getMonth()) === monthKey && inv.status === "Pago") mes += inv.total;
       if (inv.status === "Pendente") pendente += inv.total;
-      inv.itens.forEach(it => {
-        porCategoria[it.categoria] = (porCategoria[it.categoria] || 0) + it.subtotal; 
-        console.log("Encontrei item de Sofá:", it);
-      });
+      inv.itens.forEach(it => { porCategoria[it.categoria] = (porCategoria[it.categoria] || 0) + it.subtotal; });
       const so = inv.statusOperacional || "Pendente";
       porStatusOp[so] = (porStatusOp[so] || 0) + 1;
     });
@@ -51,6 +48,13 @@ export default function DashboardPage() {
   const donutData = ORDER_STATUSES.map(s => ({ name: s, value: stats.porStatusOp[s] || 0 })).filter(d => d.value > 0);
   const recentInvoices = [...invoices].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 6);
   const clientName = id => clients.find(c => c.id === id)?.nome || "—";
+
+
+  useEffect(() => {
+    if (chartData.length > 0) {
+      alert("Dados do Gráfico:\n" + JSON.stringify(chartData, null, 2));
+    }
+  }, [chartData]);
 
   return (
     <AppShell>
