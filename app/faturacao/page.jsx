@@ -17,11 +17,12 @@ export default function FaturacaoPage() {
   const [articles, setArticles] = useState([]);
   const [clients, setClients] = useState([]);
   const [invoices, setInvoices] = useState([]);
+  const [settings, setSettings] = useState(null);
   const [loading, setLoading] = useState(true);
 
   function loadAll() {
-    Promise.all([api.get("/articles"), api.get("/clients"), api.get("/invoices")])
-      .then(([a, c, i]) => { setArticles(a.articles); setClients(c.clients); setInvoices(i.invoices); })
+    Promise.all([api.get("/articles"), api.get("/clients"), api.get("/invoices"), api.get("/settings")])
+      .then(([a, c, i, s]) => { setArticles(a.articles); setClients(c.clients); setInvoices(i.invoices); setSettings(s.config); })
       .finally(() => setLoading(false));
   }
   useEffect(loadAll, []);
@@ -66,6 +67,9 @@ export default function FaturacaoPage() {
   const totalSobretaxas = cartLines.reduce((s, c) => s + c.sobretaxa, 0);
   const total = cartLines.reduce((s, c) => s + c.subtotal, 0);
   const desconto = subtotalBase - (total - totalSobretaxas);
+  const ivaPercentagem = settings?.ivaAtivo ? Number(settings.ivaPercentagem) : 0;
+  const ivaValor = Math.round(total * (ivaPercentagem / 100) * 100) / 100;
+  const totalComIva = Math.round((total + ivaValor) * 100) / 100;
 
   async function finalizarFatura(statusInicial) {
     if (cartLines.length === 0) return;
@@ -108,15 +112,26 @@ export default function FaturacaoPage() {
     setViewInvoice(v => v ? { ...v, ...d.invoice } : v);
     return d.sms;
   }
+  async function updateItemCondicao(faturaId, itemId, condicao) {
+    const d = await api.patch(`/invoices/${faturaId}/items/${itemId}`, { condicao });
+    setInvoices(prev => prev.map(inv => {
+      if (inv.id !== faturaId) return inv;
+      return { ...inv, ...d.fatura, itens: inv.itens.map(it => it.id === itemId ? { ...it, ...d.item } : it) };
+    }));
+    setViewInvoice(v => {
+      if (!v || v.id !== faturaId) return v;
+      return { ...v, ...d.fatura, itens: v.itens.map(it => it.id === itemId ? { ...it, ...d.item } : it) };
+    });
+  }
 
   return (
     <AppShell>
-      <h1 style={{ fontFamily: displayFont, fontSize: 26, color: C.ink, marginBottom: 4 }}>Facturação & Pagamentos</h1>
-      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>{user?.role === "Admin" ? "Cria facturas e controla o estado dos pagamentos" : "Cria pedidos e acompanha os que atendeste"}</div>
+      <h1 style={{ fontFamily: displayFont, fontSize: 26, color: C.ink, marginBottom: 4 }}>Faturação & Pagamentos</h1>
+      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>{user?.role === "Admin" ? "Cria faturas e controla o estado dos pagamentos" : "Cria pedidos e acompanha os que atendeste"}</div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-        <button onClick={() => setTab("nova")} style={tabStyle(tab === "nova")}>Nova Factura</button>
-        <button onClick={() => setTab("lista")} style={tabStyle(tab === "lista")}>{user?.role === "Admin" ? "Facturas" : "Meus Pedidos"} ({invoices.length})</button>
+        <button onClick={() => setTab("nova")} style={tabStyle(tab === "nova")}>Nova Fatura</button>
+        <button onClick={() => setTab("lista")} style={tabStyle(tab === "lista")}>{user?.role === "Admin" ? "Faturas" : "Meus Pedidos"} ({invoices.length})</button>
       </div>
 
       {loading ? <div style={{ color: C.inkSoft }}>A carregar...</div> : (
@@ -212,7 +227,8 @@ export default function FaturacaoPage() {
                   <div style={{ display: "flex", justifyContent: "space-between" }}><span>Subtotal</span><span>{formatMT(subtotalBase)}</span></div>
                   <div style={{ display: "flex", justifyContent: "space-between", color: C.mint }}><span>Desconto</span><span>-{formatMT(desconto)}</span></div>
                   {totalSobretaxas > 0 && <div style={{ display: "flex", justifyContent: "space-between", color: C.red }}><span>Sobretaxas (tratamento especial)</span><span>+{formatMT(totalSobretaxas)}</span></div>}
-                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 17, color: C.ink }}><span>Total</span><span>{formatMT(total)}</span></div>
+                  {ivaPercentagem > 0 && <div style={{ display: "flex", justifyContent: "space-between", color: C.inkSoft }}><span>IVA ({ivaPercentagem}%)</span><span>+{formatMT(ivaValor)}</span></div>}
+                  <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 17, color: C.ink }}><span>Total</span><span>{formatMT(totalComIva)}</span></div>
                 </div>
 
                 <Label>Estado do pagamento</Label>
@@ -220,7 +236,7 @@ export default function FaturacaoPage() {
                   <option value="">Sem pagamento (Pendente)</option>
                   {PAYMENT_METHODS.map(m => <option key={m} value={m}>Pago via {m}</option>)}
                 </Select>
-                <Btn onClick={() => finalizarFatura(pendingMethod ? "Pago" : "Pendente")} disabled={cartLines.length === 0} icon={FileText}>Emitir Factura</Btn>
+                <Btn onClick={() => finalizarFatura(pendingMethod ? "Pago" : "Pendente")} disabled={cartLines.length === 0} icon={FileText}>Emitir Fatura</Btn>
               </Card>
             </div>
           )}
@@ -279,16 +295,18 @@ export default function FaturacaoPage() {
       )}
 
       {viewInvoice && (
-        <InvoiceDetail invoice={viewInvoice} client={clients.find(c => c.id === viewInvoice.clienteId)}
-          onClose={() => setViewInvoice(null)} onMarkPaid={markPaid} onSetMethod={setMethod} onSetStatusOp={setStatusOp} />
+        <InvoiceDetail invoice={viewInvoice} client={clients.find(c => c.id === viewInvoice.clienteId)} settings={settings}
+          onClose={() => setViewInvoice(null)} onMarkPaid={markPaid} onSetMethod={setMethod} onSetStatusOp={setStatusOp}
+          onUpdateItemCondicao={updateItemCondicao} />
       )}
     </AppShell>
   );
 }
 
-function InvoiceDetail({ invoice, client, onClose, onMarkPaid, onSetMethod, onSetStatusOp }) {
+function InvoiceDetail({ invoice, client, settings, onClose, onMarkPaid, onSetMethod, onSetStatusOp, onUpdateItemCondicao }) {
   const so = invoice.statusOperacional || "Pendente";
   const [smsMsg, setSmsMsg] = useState("");
+  const [inspectingItem, setInspectingItem] = useState(null);
 
   async function handleStatusChange(newStatus) {
     const notifiable = newStatus === "Pronto para Entrega" || newStatus === "Entregue";
@@ -297,15 +315,31 @@ function InvoiceDetail({ invoice, client, onClose, onMarkPaid, onSetMethod, onSe
     if (sms) setSmsMsg(sms.simulated ? "SMS simulado (ver consola do servidor)" : sms.ok ? "SMS enviado!" : sms.error || "Falha ao enviar SMS");
   }
 
+  const nomeEmpresa = settings?.nome || "Lavandaria Tanque Puro";
+
   return (
     <div style={{ position: "fixed", inset: 0, background: "rgba(20,28,50,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }} onClick={onClose}>
-      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, background: "#fff", borderRadius: 4, position: "relative", boxShadow: "0 30px 70px rgba(10,20,50,0.4)", overflow: "hidden" }}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 420, maxHeight: "90vh", overflowY: "auto", background: "#fff", borderRadius: 4, position: "relative", boxShadow: "0 30px 70px rgba(10,20,50,0.4)" }}>
         <div style={{ height: 10, background: `repeating-radial-gradient(circle at 10px 5px, transparent 0 4px, ${C.bg} 4px 5px)`, backgroundSize: "20px 10px", backgroundColor: C.cobaltDark }} />
         <div style={{ padding: "22px 26px 26px", fontFamily: monoFont }}>
           <div style={{ textAlign: "center", marginBottom: 16 }}>
-            <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 17, color: C.ink }}>LAVANDARIA TANQUE PURO</div>
-            <div style={{ fontSize: 11.5, color: C.inkSoft }}>Recibo / Factura {invoice.numero}</div>
+            {settings?.logoUrl && <img src={settings.logoUrl} alt="Logótipo" style={{ height: 34, margin: "0 auto 8px", display: "block", objectFit: "contain" }} />}
+            <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 17, color: C.ink }}>{nomeEmpresa.toUpperCase()}</div>
+            <div style={{ fontSize: 11.5, color: C.inkSoft }}>Recibo / Fatura {invoice.numero}</div>
             <div style={{ fontSize: 11, color: C.inkSoft }}>{formatDate(invoice.data)}</div>
+            {settings?.mostrarEndereco && settings?.endereco && <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 4 }}>{settings.endereco}</div>}
+            <div style={{ fontSize: 10, color: C.inkSoft, display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
+              {settings?.mostrarNuit && settings?.nuit && <span>NUIT: {settings.nuit}</span>}
+              {settings?.mostrarContacto && settings?.contacto && <span>{settings.contacto}</span>}
+              {settings?.mostrarEmail && settings?.email && <span>{settings.email}</span>}
+            </div>
+            {(settings?.mostrarWebsite && settings?.website) || (settings?.mostrarContaBancaria && settings?.contaBancaria) ? (
+              <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 2 }}>
+                {settings?.mostrarWebsite && settings?.website && <span>{settings.website}</span>}
+                {settings?.mostrarWebsite && settings?.website && settings?.mostrarContaBancaria && settings?.contaBancaria && " · "}
+                {settings?.mostrarContaBancaria && settings?.contaBancaria && <span>Conta: {settings.contaBancaria}</span>}
+              </div>
+            ) : null}
           </div>
           <div style={{ borderTop: `1px dashed ${C.border}`, borderBottom: `1px dashed ${C.border}`, padding: "10px 0", marginBottom: 12, fontSize: 12.5 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}><span>Cliente</span><b>{client?.nome || "—"}</b></div>
@@ -314,13 +348,21 @@ function InvoiceDetail({ invoice, client, onClose, onMarkPaid, onSetMethod, onSe
           </div>
           <div style={{ display: "flex", flexDirection: "column", gap: 6, marginBottom: 12 }}>
             {invoice.itens.map((it, i) => (
-              <div key={i} style={{ fontSize: 12 }}>
+              <div key={it.id || i} style={{ fontSize: 12 }}>
                 <div style={{ display: "flex", justifyContent: "space-between" }}><span>{it.qtd}x {it.nome}</span><span>{formatMT(it.subtotal)}</span></div>
                 <div style={{ color: C.inkSoft, fontSize: 10.5 }}>{it.categoria} · {formatMT(it.precoUnit)}/un {it.comDesconto ? "(desconto)" : ""}</div>
                 {condicaoTemAvisos(it.condicao) && (
-                  <div style={{ display: "flex", alignItems: "center", gap: 4, color: C.amberDark || C.amber, fontSize: 10, marginTop: 2 }}>
-                    <ClipboardCheck size={10} /> Inspecção com avisos registados{it.sobretaxa > 0 ? ` · tratamento especial +${formatMT(it.sobretaxa)}` : ""}
+                  <div style={{ display: "flex", alignItems: "center", gap: 4, color: C.amber, fontSize: 10, marginTop: 2 }}>
+                    <ClipboardCheck size={10} /> Inspeção com avisos registados{it.sobretaxa > 0 ? ` · tratamento especial +${formatMT(it.sobretaxa)}` : ""}
                   </div>
+                )}
+                {it.id && (
+                  <button onClick={() => setInspectingItem(it)} style={{
+                    marginTop: 3, display: "inline-flex", alignItems: "center", gap: 4, border: "none", background: "none",
+                    cursor: "pointer", color: C.cobalt, fontSize: 10, fontWeight: 600, fontFamily: bodyFont, padding: 0
+                  }}>
+                    <ClipboardCheck size={10} /> {condicaoTemAvisos(it.condicao) ? "Ver / editar inspeção" : "Inspecionar artigo"}
+                  </button>
                 )}
               </div>
             ))}
@@ -328,6 +370,7 @@ function InvoiceDetail({ invoice, client, onClose, onMarkPaid, onSetMethod, onSe
           <div style={{ borderTop: `1px dashed ${C.border}`, paddingTop: 10, fontSize: 13 }}>
             <div style={{ display: "flex", justifyContent: "space-between" }}><span>Subtotal</span><span>{formatMT(invoice.subtotal)}</span></div>
             {invoice.desconto > 0 && <div style={{ display: "flex", justifyContent: "space-between", color: C.mint }}><span>Desconto</span><span>-{formatMT(invoice.desconto)}</span></div>}
+            {invoice.ivaValor > 0 && <div style={{ display: "flex", justifyContent: "space-between", color: C.inkSoft }}><span>IVA ({invoice.ivaPercentagem}%)</span><span>+{formatMT(invoice.ivaValor)}</span></div>}
             <div style={{ display: "flex", justifyContent: "space-between", fontWeight: 700, fontSize: 16, marginTop: 6, color: C.ink }}><span>TOTAL</span><span>{formatMT(invoice.total)}</span></div>
           </div>
 
@@ -354,6 +397,12 @@ function InvoiceDetail({ invoice, client, onClose, onMarkPaid, onSetMethod, onSe
         </div>
         <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, border: "none", background: C.bg, borderRadius: 8, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={15} color={C.inkSoft} /></button>
       </div>
+
+      {inspectingItem && (
+        <InspectionModal itemNome={inspectingItem.nome} condicao={inspectingItem.condicao || novaCondicaoVazia()}
+          onSave={async cond => { await onUpdateItemCondicao(invoice.id, inspectingItem.id, cond); setInspectingItem(null); }}
+          onClose={() => setInspectingItem(null)} />
+      )}
     </div>
   );
 }

@@ -54,7 +54,7 @@ export default function ClientesPage() {
 
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr 1.5fr auto", gap: 10, alignItems: "end" }}>
-          <div><Label>Nome</Label><Input value={form.nome === "Cliente Balcao" ? "Cliente Balcão" : form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} /></div>
+          <div><Label>Nome</Label><Input value={form.nome} onChange={e => setForm({ ...form, nome: e.target.value })} /></div>
           <div><Label>Telefone</Label><Input value={form.telefone} onChange={e => setForm({ ...form, telefone: e.target.value })} placeholder="84 000 0000" /></div>
           <div><Label>Endereço</Label><Input value={form.endereco} onChange={e => setForm({ ...form, endereco: e.target.value })} placeholder="Bairro, rua, referência" /></div>
           <Btn onClick={addClient} icon={Plus}>Adicionar</Btn>

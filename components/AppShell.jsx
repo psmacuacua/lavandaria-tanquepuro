@@ -1,7 +1,7 @@
 "use client";
 import React, { useEffect, useState } from "react";
 import { useRouter, usePathname } from "next/navigation";
-import { Home, FileText, Users, Shirt, UserCog, LogOut, Menu, X, KeyRound } from "lucide-react";
+import { Home, FileText, Users, Shirt, UserCog, LogOut, Menu, X, KeyRound, Settings } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { C, displayFont, bodyFont } from "@/components/ui";
 import LogoMark from "@/components/LogoMark";
@@ -38,11 +38,12 @@ export default function AppShell({ children }) {
 
   const items = [
     { href: "/dashboard", label: "Painel Financeiro", icon: Home },
-    { href: "/faturacao", label: "Facturação & Pagamentos", icon: FileText },
+    { href: "/faturacao", label: "Faturação & Pagamentos", icon: FileText },
     { href: "/clientes", label: "Clientes", icon: Users },
     { href: "/artigos", label: "Serviços & Artigos", icon: Shirt },
   ];
   if (user.role === "Admin") items.push({ href: "/utilizadores", label: "Utilizadores", icon: UserCog });
+  if (user.role === "Admin") items.push({ href: "/configuracoes", label: "Configurações", icon: Settings });
   items.push({ href: "/conta", label: "A Minha Conta", icon: KeyRound });
 
   // --- Estilos responsivos calculados em JS (sem depender de CSS + transform sempre ativo) ---
@@ -94,9 +95,7 @@ export default function AppShell({ children }) {
         </div>
         <div style={{ borderTop: "1px solid rgba(255,255,255,0.12)", paddingTop: 14 }}>
           <div style={{ color: "rgba(255,255,255,0.85)", fontSize: 13.5, fontWeight: 600, padding: "0 12px" }}>{user.nome}</div>
-          <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, padding: "2px 12px 12px" }}>
-            {user.role === "Funcionario" ? "Funcionário" : user.role}
-          </div>
+          <div style={{ color: "rgba(255,255,255,0.45)", fontSize: 12, padding: "2px 12px 12px" }}>{user.role}</div>
           <button onClick={logout} style={{
             display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 10, border: "none",
             background: "rgba(255,255,255,0.06)", color: "rgba(255,255,255,0.75)", fontFamily: bodyFont, fontWeight: 600,

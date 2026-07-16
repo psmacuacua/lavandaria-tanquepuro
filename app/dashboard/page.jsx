@@ -44,7 +44,7 @@ export default function DashboardPage() {
     return { hoje, mes, pendente, totalFaturas: invoices.length, porCategoria, porStatusOp };
   }, [invoices]);
 
-  const chartData = CATEGORIES.map(c => ({ name: c === "Limpeza de Sofá" ? "Limp. Sofá" : c.replace("Lavagem ", "Lav. "), total: Math.round(stats.porCategoria[c] || 0) }));
+  const chartData = CATEGORIES.map(c => ({ name: c.replace("Lavagem ", "Lav. "), total: Math.round(stats.porCategoria[c] || 0) }));
   const donutData = ORDER_STATUSES.map(s => ({ name: s, value: stats.porStatusOp[s] || 0 })).filter(d => d.value > 0);
   const recentInvoices = [...invoices].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 6);
   const clientName = id => clients.find(c => c.id === id)?.nome || "—";
@@ -64,13 +64,13 @@ export default function DashboardPage() {
               <div style={{ color: C.gold, fontSize: 12, fontWeight: 700, letterSpacing: 1, marginBottom: 6 }}>LAVANDARIA TANQUE PURO · PAINEL</div>
               <h1 style={{ fontFamily: displayFont, fontSize: 27, color: "#fff", marginBottom: 6 }}>{user?.role === "Admin" ? "Resumo financeiro" : "Os meus pedidos"}</h1>
               <div style={{ color: "rgba(255,255,255,0.7)", fontSize: 13.5, maxWidth: 420 }}>
-                {user?.role === "Admin" ? "Facturação, pagamentos pendentes e desempenho por categoria de serviço." : "Resumo dos pedidos que atendeste e do seu estado actual."}
+                {user?.role === "Admin" ? "Faturação, pagamentos pendentes e desempenho por categoria de serviço." : "Resumo dos pedidos que atendeste e do seu estado atual."}
               </div>
             </div>
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12, padding: "12px 20px", textAlign: "center" }}>
                 <div style={{ color: C.gold, fontFamily: monoFont, fontWeight: 700, fontSize: 22 }}>{stats.totalFaturas}</div>
-                <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 10.5, letterSpacing: 0.5 }}>FACTURAS</div>
+                <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 10.5, letterSpacing: 0.5 }}>FATURAS</div>
               </div>
               <div style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12, padding: "12px 20px", textAlign: "center" }}>
                 <div style={{ color: C.gold, fontFamily: monoFont, fontWeight: 700, fontSize: 22 }}>{clients.length}</div>
@@ -101,11 +101,11 @@ export default function DashboardPage() {
 
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(200px,1fr))", gap: 14, marginBottom: 22 }}>
             <Card>
-              <div style={{ fontSize: 12.5, color: C.inkSoft, fontWeight: 600 }}>Facturado hoje</div>
+              <div style={{ fontSize: 12.5, color: C.inkSoft, fontWeight: 600 }}>Faturado hoje</div>
               <div style={{ fontFamily: monoFont, fontSize: 24, fontWeight: 700, color: C.cobalt, marginTop: 6 }}>{formatMT(stats.hoje)}</div>
             </Card>
             <Card>
-              <div style={{ fontSize: 12.5, color: C.inkSoft, fontWeight: 600 }}>Facturado este mês</div>
+              <div style={{ fontSize: 12.5, color: C.inkSoft, fontWeight: 600 }}>Faturado este mês</div>
               <div style={{ fontFamily: monoFont, fontSize: 24, fontWeight: 700, color: C.mint, marginTop: 6 }}>{formatMT(stats.mes)}</div>
             </Card>
             <Card>
@@ -113,14 +113,14 @@ export default function DashboardPage() {
               <div style={{ fontFamily: monoFont, fontSize: 24, fontWeight: 700, color: C.amber, marginTop: 6 }}>{formatMT(stats.pendente)}</div>
             </Card>
             <Card>
-              <div style={{ fontSize: 12.5, color: C.inkSoft, fontWeight: 600 }}>Nº de facturas</div>
+              <div style={{ fontSize: 12.5, color: C.inkSoft, fontWeight: 600 }}>Nº de faturas</div>
               <div style={{ fontFamily: monoFont, fontSize: 24, fontWeight: 700, color: C.ink, marginTop: 6 }}>{stats.totalFaturas}</div>
             </Card>
           </div>
 
           <div style={{ display: "grid", gridTemplateColumns: "1.1fr 0.9fr", gap: 16, marginBottom: 16 }}>
             <Card>
-              <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink, marginBottom: 14 }}>Facturação por serviço</div>
+              <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink, marginBottom: 14 }}>Faturação por serviço</div>
               <ResponsiveContainer width="100%" height={230}>
                 <BarChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={C.border} vertical={false} />
@@ -156,9 +156,9 @@ export default function DashboardPage() {
           </div>
 
           <Card>
-            <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink, marginBottom: 14 }}>Facturas recentes</div>
+            <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink, marginBottom: 14 }}>Faturas recentes</div>
             <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
-              {recentInvoices.length === 0 && <div style={{ color: C.inkSoft, fontSize: 13.5 }}>Ainda não há facturas.</div>}
+              {recentInvoices.length === 0 && <div style={{ color: C.inkSoft, fontSize: 13.5 }}>Ainda não há faturas.</div>}
               {recentInvoices.map(inv => (
                 <div key={inv.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
                   <div>

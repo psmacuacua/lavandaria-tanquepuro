@@ -51,7 +51,7 @@ export default function ContaPage() {
           <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink }}>Alterar password</div>
         </div>
         <form onSubmit={submit}>
-          <Label>Password actual</Label>
+          <Label>Password atual</Label>
           <Input type="password" value={currentPassword} onChange={e => setCurrentPassword(e.target.value)} style={{ marginBottom: 12 }} />
           <Label>Nova password</Label>
           <Input type="password" value={newPassword} onChange={e => setNewPassword(e.target.value)} style={{ marginBottom: 12 }} />

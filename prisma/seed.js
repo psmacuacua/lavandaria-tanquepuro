@@ -45,6 +45,13 @@ async function main() {
     await prisma.cliente.create({ data: { nome: "Cliente Balcão", telefone: "", endereco: "" } });
   }
 
+  console.log("A semear configuração da empresa...");
+  await prisma.empresaConfig.upsert({
+    where: { id: 1 },
+    update: {},
+    create: { id: 1 },
+  });
+
   console.log(`A semear ${articles.length} artigos...`);
   const existing = await prisma.artigo.count();
   if (existing === 0) {

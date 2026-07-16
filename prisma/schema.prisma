@@ -92,6 +92,8 @@ model Fatura {
   dataCriacao       DateTime          @default(now()) @map("data_criacao")
   subtotal          Decimal           @default(0) @db.Decimal(10, 2)
   desconto          Decimal           @default(0) @db.Decimal(10, 2)
+  ivaPercentagem    Decimal           @default(0) @map("iva_percentagem") @db.Decimal(5, 2)
+  ivaValor          Decimal           @default(0) @map("iva_valor") @db.Decimal(10, 2)
   total             Decimal           @default(0) @db.Decimal(10, 2)
   status            StatusPagamento   @default(Pendente)
   statusOperacional StatusOperacional @default(Pendente) @map("status_operacional")
@@ -102,6 +104,29 @@ model Fatura {
   @@index([clienteId])
   @@index([status])
   @@map("faturas")
+}
+
+model EmpresaConfig {
+  id                   Int      @id @default(1)
+  nome                 String   @default("Lavandaria Tanque Puro") @db.VarChar(150)
+  logoUrl              String?  @map("logo_url") @db.LongText
+  nuit                 String?  @db.VarChar(30)
+  email                String?  @db.VarChar(150)
+  contacto             String?  @db.VarChar(60)
+  endereco             String?  @db.VarChar(255)
+  website              String?  @db.VarChar(150)
+  contaBancaria        String?  @map("conta_bancaria") @db.VarChar(150)
+  ivaAtivo             Boolean  @default(true) @map("iva_ativo")
+  ivaPercentagem       Decimal  @default(16) @map("iva_percentagem") @db.Decimal(5, 2)
+  mostrarNuit          Boolean  @default(true) @map("mostrar_nuit")
+  mostrarEndereco      Boolean  @default(true) @map("mostrar_endereco")
+  mostrarEmail         Boolean  @default(false) @map("mostrar_email")
+  mostrarContacto      Boolean  @default(true) @map("mostrar_contacto")
+  mostrarWebsite       Boolean  @default(false) @map("mostrar_website")
+  mostrarContaBancaria Boolean  @default(false) @map("mostrar_conta_bancaria")
+  atualizadoEm         DateTime @updatedAt @map("atualizado_em")
+
+  @@map("empresa_config")
 }
 
 model FaturaItem {

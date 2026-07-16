@@ -138,7 +138,38 @@ Esta ficha fica gravada por artigo dentro da fatura (`fatura_itens.condicao`, ca
 aparece resumida no recibo/detalhe da fatura, com a sobretaxa destacada quando aplicável.
 A sobretaxa entra automaticamente no total da fatura.
 
-## 10. Estrutura do projeto
+**A ficha pode ser vista e editada mesmo depois da fatura já ter sido emitida** — basta abrir
+a fatura na lista e clicar em "Ver / editar inspeção" em qualquer artigo. Se a mancha difícil
+for marcada ou desmarcada depois de criada, a sobretaxa, o IVA e o total da fatura são
+recalculados automaticamente (`app/api/invoices/[id]/items/[itemId]/route.js`).
+
+## 10. IVA configurável
+
+A taxa de IVA não fica fixa no código — é definida em **Configurações → IVA** e pode ser
+mudada pelo Admin sempre que a taxa oficial mudar. Cada fatura guarda a taxa que estava em
+vigor no momento em que foi emitida (`faturas.iva_percentagem` e `faturas.iva_valor`), por
+isso alterar a taxa no futuro não altera faturas já emitidas — só as novas.
+
+- Podes desligar o IVA por completo (campo "Aplicar IVA nas faturas"), útil se a lavandaria
+  não for contribuinte de IVA.
+- O carrinho da Nova Fatura já mostra a pré-visualização do IVA antes de emitir.
+- O recibo/detalhe da fatura mostra a linha "IVA (X%)" sempre que aplicável.
+
+## 11. Configurações da lavandaria (só Admin)
+
+Página **Configurações** (menu lateral, só visível para Admin), com os dados que aparecem
+no recibo/fatura, tudo guardado na base de dados (tabela `empresa_config`, uma única linha):
+
+- Nome da lavandaria e logótipo (upload de imagem — fica guardado como base64 na base de
+  dados; para produção com muitos acessos, considera antes alojar a imagem num serviço
+  externo tipo S3/Cloudinary e colar aqui só o URL, para não sobrecarregar a base de dados)
+- NUIT, email, contacto, endereço, website, conta bancária
+- Taxa de IVA e se está ativo (ver secção anterior)
+- **Checkboxes "Mostrar na fatura"** — o Admin escolhe exatamente quais destes dados
+  (endereço, NUIT, contacto, email, website, conta bancária) aparecem no recibo; nome e
+  logótipo aparecem sempre.
+
+## 12. Estrutura do projeto
 
 ```
 prisma/schema.prisma       modelos da base de dados (categorias, clientes, utilizadores,
@@ -157,7 +188,7 @@ app/faturacao, app/clientes,
 app/artigos, app/utilizadores  páginas da aplicação
 ```
 
-## 11. Notas para produção
+## 13. Notas para produção
 
 - As palavras-passe já ficam com hash (`bcryptjs`) na base de dados — nunca em texto simples.
 - Troca `JWT_SECRET` por um valor longo e aleatório antes de publicar.
@@ -166,3 +197,8 @@ app/artigos, app/utilizadores  páginas da aplicação
 
 > Se já tinhas corrido `npm run db:setup` antes desta versão, corre `npx prisma migrate dev`
 > outra vez para aplicar os novos campos (`must_change_password`, `condicao`, `sobretaxa`).
+>
+> Se já tinhas uma base de dados com a versão anterior (IVA/configurações da empresa ainda
+> não existiam), corre `npx prisma db push` (recomendado, especialmente em TiDB/PlanetScale
+> onde `migrate dev` pode falhar por não haver permissão para a shadow database), ou aplica
+> manualmente `prisma/fix_missing_columns_v2.sql` na tua base de dados.
