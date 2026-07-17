@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Plus, Search, Trash2, Pencil, Check, X, Phone, MapPin, MessageSquare } from "lucide-react";
+import { Plus, Search, Trash2, Pencil, Check, X, Phone, MapPin, Link2, Megaphone } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { api } from "@/lib/apiClient";
 import { C, monoFont, displayFont, Card, Input, Label, Btn, thStyle, tdStyle } from "@/components/ui";
@@ -12,7 +12,9 @@ export default function ClientesPage() {
   const [search, setSearch] = useState("");
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ nome: "", telefone: "", endereco: "" });
-  const [smsStatus, setSmsStatus] = useState({});
+  const [rowMsg, setRowMsg] = useState({});
+  const [promoAllMsg, setPromoAllMsg] = useState("");
+  const [sendingPromoAll, setSendingPromoAll] = useState(false);
 
   function load() {
     api.get("/clients").then(d => setClients(d.clients)).finally(() => setLoading(false));
@@ -35,13 +37,35 @@ export default function ClientesPage() {
     setClients(clients.map(c => c.id === id ? d.client : c));
     setEditingId(null);
   }
-  async function notify(client) {
-    setSmsStatus(s => ({ ...s, [client.id]: "A enviar..." }));
+
+  async function enviarLink(client) {
+    setRowMsg(s => ({ ...s, [client.id]: "A enviar..." }));
     try {
-      const d = await api.post("/notify/sms", { clienteId: client.id, template: "personalizada", texto: `Ola ${client.nome}, contacte a Lavandaria Tanque Puro para mais informacoes sobre o seu pedido.` });
-      setSmsStatus(s => ({ ...s, [client.id]: d.simulated ? "Simulado (ver consola do servidor)" : "Enviado!" }));
+      const d = await api.post("/notify/portal", { clienteId: client.id });
+      setRowMsg(s => ({ ...s, [client.id]: d.simulated ? "Link enviado (simulado — ver consola do servidor)" : "Link enviado!" }));
     } catch (e) {
-      setSmsStatus(s => ({ ...s, [client.id]: e.message }));
+      setRowMsg(s => ({ ...s, [client.id]: e.message }));
+    }
+  }
+  async function enviarPromo(client) {
+    setRowMsg(s => ({ ...s, [client.id]: "A enviar..." }));
+    try {
+      const d = await api.post("/notify/promo", { clienteId: client.id });
+      setRowMsg(s => ({ ...s, [client.id]: d.simulated ? "Promoção enviada (simulado)" : "Promoção enviada!" }));
+    } catch (e) {
+      setRowMsg(s => ({ ...s, [client.id]: e.message }));
+    }
+  }
+  async function enviarPromoTodos() {
+    if (!window.confirm("Enviar a mensagem promocional a todos os clientes com telefone registado?")) return;
+    setSendingPromoAll(true); setPromoAllMsg("");
+    try {
+      const d = await api.post("/notify/promo", { todos: true });
+      setPromoAllMsg(`Enviado a ${d.enviados} de ${d.total} clientes.`);
+    } catch (e) {
+      setPromoAllMsg("Erro: " + e.message);
+    } finally {
+      setSendingPromoAll(false);
     }
   }
 
@@ -49,7 +73,15 @@ export default function ClientesPage() {
 
   return (
     <AppShell>
-      <h1 style={{ fontFamily: displayFont, fontSize: 26, color: C.ink, marginBottom: 4 }}>Clientes</h1>
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", flexWrap: "wrap", gap: 10, marginBottom: 4 }}>
+        <h1 style={{ fontFamily: displayFont, fontSize: 26, color: C.ink }}>Clientes</h1>
+        <div style={{ textAlign: "right" }}>
+          <Btn variant="ghost" size="sm" icon={Megaphone} onClick={enviarPromoTodos} disabled={sendingPromoAll}>
+            {sendingPromoAll ? "A enviar..." : "Enviar promoção a todos"}
+          </Btn>
+          {promoAllMsg && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 4 }}>{promoAllMsg}</div>}
+        </div>
+      </div>
       <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>{clients.length} clientes registados · morada e telefone ficam vinculados a cada pedido</div>
 
       <Card style={{ marginBottom: 16 }}>
@@ -73,31 +105,40 @@ export default function ClientesPage() {
             </tr></thead>
             <tbody>
               {filtered.map(c => (
-                <tr key={c.id} style={{ borderTop: `1px solid ${C.border}` }}>
-                  {editingId === c.id ? (
-                    <>
-                      <td style={tdStyle}><input value={editForm.nome} onChange={e => setEditForm({ ...editForm, nome: e.target.value })} style={{ width: "100%", padding: 5, borderRadius: 6, border: `1px solid ${C.border}` }} /></td>
-                      <td style={tdStyle}><input value={editForm.telefone} onChange={e => setEditForm({ ...editForm, telefone: e.target.value })} style={{ width: "100%", padding: 5, borderRadius: 6, border: `1px solid ${C.border}` }} /></td>
-                      <td style={tdStyle}><input value={editForm.endereco} onChange={e => setEditForm({ ...editForm, endereco: e.target.value })} style={{ width: "100%", padding: 5, borderRadius: 6, border: `1px solid ${C.border}` }} /></td>
-                      <td style={{ ...tdStyle, display: "flex", gap: 6 }}>
-                        <button onClick={() => saveEdit(c.id)} style={{ border: "none", background: "none", cursor: "pointer" }}><Check size={15} color={C.mint} /></button>
-                        <button onClick={() => setEditingId(null)} style={{ border: "none", background: "none", cursor: "pointer" }}><X size={15} color={C.red} /></button>
-                      </td>
-                    </>
-                  ) : (
-                    <>
-                      <td style={tdStyle}>{c.nome}</td>
-                      <td style={{ ...tdStyle, fontFamily: monoFont }}><Phone size={12} style={{ marginRight: 5, marginBottom: -1, color: C.inkSoft }} />{c.telefone || "—"}</td>
-                      <td style={{ ...tdStyle, color: C.inkSoft, fontSize: 12.5 }}><MapPin size={12} style={{ marginRight: 5, marginBottom: -1 }} />{c.endereco || "—"}</td>
-                      <td style={{ ...tdStyle, display: "flex", gap: 8, alignItems: "center" }}>
-                        <button onClick={() => startEdit(c)} style={{ border: "none", background: "none", cursor: "pointer" }}><Pencil size={14} color={C.inkSoft} /></button>
-                        {c.id !== 1 && <button onClick={() => removeClient(c.id)} style={{ border: "none", background: "none", cursor: "pointer" }}><Trash2 size={14} color={C.red} /></button>}
-                        {c.telefone && <button onClick={() => notify(c)} title="Enviar SMS" style={{ border: "none", background: "none", cursor: "pointer" }}><MessageSquare size={14} color={C.cobalt} /></button>}
-                        {smsStatus[c.id] && <span style={{ fontSize: 10.5, color: C.inkSoft }}>{smsStatus[c.id]}</span>}
-                      </td>
-                    </>
+                <React.Fragment key={c.id}>
+                  <tr style={{ borderTop: `1px solid ${C.border}` }}>
+                    {editingId === c.id ? (
+                      <>
+                        <td style={tdStyle}><input value={editForm.nome} onChange={e => setEditForm({ ...editForm, nome: e.target.value })} style={{ width: "100%", padding: 5, borderRadius: 6, border: `1px solid ${C.border}` }} /></td>
+                        <td style={tdStyle}><input value={editForm.telefone} onChange={e => setEditForm({ ...editForm, telefone: e.target.value })} style={{ width: "100%", padding: 5, borderRadius: 6, border: `1px solid ${C.border}` }} /></td>
+                        <td style={tdStyle}><input value={editForm.endereco} onChange={e => setEditForm({ ...editForm, endereco: e.target.value })} style={{ width: "100%", padding: 5, borderRadius: 6, border: `1px solid ${C.border}` }} /></td>
+                        <td style={{ ...tdStyle, display: "flex", gap: 6 }}>
+                          <button onClick={() => saveEdit(c.id)} style={{ border: "none", background: "none", cursor: "pointer" }}><Check size={15} color={C.mint} /></button>
+                          <button onClick={() => setEditingId(null)} style={{ border: "none", background: "none", cursor: "pointer" }}><X size={15} color={C.red} /></button>
+                        </td>
+                      </>
+                    ) : (
+                      <>
+                        <td style={tdStyle}>{c.nome}</td>
+                        <td style={{ ...tdStyle, fontFamily: monoFont }}><Phone size={12} style={{ marginRight: 5, marginBottom: -1, color: C.inkSoft }} />{c.telefone || "—"}</td>
+                        <td style={{ ...tdStyle, color: C.inkSoft, fontSize: 12.5 }}><MapPin size={12} style={{ marginRight: 5, marginBottom: -1 }} />{c.endereco || "—"}</td>
+                        <td style={{ ...tdStyle, display: "flex", gap: 10, alignItems: "center" }}>
+                          <button onClick={() => startEdit(c)} title="Editar" style={{ border: "none", background: "none", cursor: "pointer" }}><Pencil size={14} color={C.inkSoft} /></button>
+                          {c.id !== 1 && <button onClick={() => removeClient(c.id)} title="Remover" style={{ border: "none", background: "none", cursor: "pointer" }}><Trash2 size={14} color={C.red} /></button>}
+                          {c.telefone && (
+                            <>
+                              <button onClick={() => enviarLink(c)} title="Enviar link do portal (dívidas e estado)" style={{ border: "none", background: "none", cursor: "pointer" }}><Link2 size={14} color={C.cobalt} /></button>
+                              <button onClick={() => enviarPromo(c)} title="Enviar mensagem promocional" style={{ border: "none", background: "none", cursor: "pointer" }}><Megaphone size={14} color={C.mint} /></button>
+                            </>
+                          )}
+                        </td>
+                      </>
+                    )}
+                  </tr>
+                  {rowMsg[c.id] && (
+                    <tr><td colSpan={4} style={{ padding: "0 10px 8px", fontSize: 11, color: C.inkSoft }}>{rowMsg[c.id]}</td></tr>
                   )}
-                </tr>
+                </React.Fragment>
               ))}
             </tbody>
           </table>

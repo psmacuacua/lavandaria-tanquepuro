@@ -17,12 +17,16 @@ function serialize(c) {
     contaBancaria: c.contaBancaria || "",
     ivaAtivo: c.ivaAtivo,
     ivaPercentagem: Number(c.ivaPercentagem),
+    sobretaxaManchaDificil: Number(c.sobretaxaManchaDificil),
     mostrarNuit: c.mostrarNuit,
     mostrarEndereco: c.mostrarEndereco,
     mostrarEmail: c.mostrarEmail,
     mostrarContacto: c.mostrarContacto,
     mostrarWebsite: c.mostrarWebsite,
     mostrarContaBancaria: c.mostrarContaBancaria,
+    mensagemPronto: c.mensagemPronto,
+    mensagemPortal: c.mensagemPortal,
+    mensagemPromocional: c.mensagemPromocional,
   };
 }
 
@@ -62,7 +66,7 @@ async function PATCH(req) {
   }
 
   const data = {};
-  const strFields = ["nome", "nuit", "email", "contacto", "endereco", "website", "contaBancaria"];
+  const strFields = ["nome", "nuit", "email", "contacto", "endereco", "website", "contaBancaria", "mensagemPronto", "mensagemPortal", "mensagemPromocional"];
   for (const f of strFields) if (body[f] !== undefined) data[f] = String(body[f]).trim();
 
   const boolFields = ["ivaAtivo", "mostrarNuit", "mostrarEndereco", "mostrarEmail", "mostrarContacto", "mostrarWebsite", "mostrarContaBancaria"];
@@ -74,6 +78,14 @@ async function PATCH(req) {
       return NextResponse.json({ error: "Taxa de IVA inválida (tem de estar entre 0 e 100)." }, { status: 400 });
     }
     data.ivaPercentagem = v;
+  }
+
+  if (body.sobretaxaManchaDificil !== undefined && body.sobretaxaManchaDificil !== "") {
+    const v = Number(body.sobretaxaManchaDificil);
+    if (!isFinite(v) || v < 0) {
+      return NextResponse.json({ error: "Valor de sobretaxa inválido." }, { status: 400 });
+    }
+    data.sobretaxaManchaDificil = v;
   }
 
   if (logoDataUrl !== undefined) data.logoUrl = logoDataUrl;

@@ -49,7 +49,15 @@ async function main() {
   await prisma.empresaConfig.upsert({
     where: { id: 1 },
     update: {},
-    create: { id: 1 },
+    create: {
+      id: 1,
+      nome: "Lavandaria Tanque Puro",
+      // Adicione os campos que o Prisma está a reclamar:
+      mensagemPronto: "Olá {nome}, a sua roupa na {empresa} está pronta para entrega. Obrigado pela preferência!",
+      mensagemPortal: "Olá {nome}, veja o estado do seu pedido e as faturas pendentes aqui: {link}",
+      mensagemPromocional: "Olá {nome}, aproveite: lave mais de 5 artigos numa só entrega e ganhe desconto especial na {empresa}!",
+      // Se houver outros campos que o schema exige, adicione-os também
+  }
   });
 
   console.log(`A semear ${articles.length} artigos...`);

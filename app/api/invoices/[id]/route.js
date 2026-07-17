@@ -3,11 +3,13 @@ const { prisma } = require("@/lib/prisma");
 const { getSessionFromRequest } = require("@/lib/auth");
 const { PAYMENT_METHOD_TO_ENUM, ENUM_TO_PAYMENT_METHOD, STATUS_OP_TO_ENUM, ENUM_TO_STATUS_OP } = require("@/lib/enums");
 const { sendSms } = require("@/lib/sms");
+const { getEmpresaConfig } = require("@/lib/empresaConfig");
 
 function serialize(f) {
   return {
     id: f.id, numero: f.numero, clienteId: f.clienteId, data: f.dataCriacao,
-    subtotal: Number(f.subtotal), desconto: Number(f.desconto), total: Number(f.total),
+    subtotal: Number(f.subtotal), desconto: Number(f.desconto),
+    ivaPercentagem: Number(f.ivaPercentagem), ivaValor: Number(f.ivaValor), total: Number(f.total),
     status: f.status,
     statusOperacional: ENUM_TO_STATUS_OP[f.statusOperacional] || f.statusOperacional,
     metodoPagamento: f.metodoPagamento ? (ENUM_TO_PAYMENT_METHOD[f.metodoPagamento] || f.metodoPagamento) : null,
@@ -17,8 +19,8 @@ function serialize(f) {
 /**
  * Body aceite (todos os campos opcionais):
  * { status, metodoPagamento, statusOperacional, avisarCliente }
- * Se avisarCliente=true e statusOperacional for "Pronto para Entrega" ou "Entregue",
- * envia automaticamente um SMS ao cliente da fatura.
+ * Se avisarCliente=true e statusOperacional for "Pronto para Entrega", envia
+ * automaticamente a mensagem "mensagemPronto" configurada ao cliente da fatura.
  */
 async function PATCH(req, { params }) {
   const session = getSessionFromRequest(req);
@@ -47,9 +49,9 @@ async function PATCH(req, { params }) {
   const fatura = await prisma.fatura.update({ where: { id }, data, include: { cliente: true } });
 
   let sms = null;
-  if (body.avisarCliente && (body.statusOperacional === "Pronto para Entrega" || body.statusOperacional === "Entregue")) {
-    const template = body.statusOperacional === "Pronto para Entrega" ? "pronto" : "entregue";
-    sms = await sendSms(fatura.cliente.telefone, template, { nome: fatura.cliente.nome });
+  if (body.avisarCliente && body.statusOperacional === "Pronto para Entrega") {
+    const config = await getEmpresaConfig();
+    sms = await sendSms(fatura.cliente.telefone, config.mensagemPronto, { nome: fatura.cliente.nome, empresa: config.nome });
   }
 
   return NextResponse.json({ invoice: serialize(fatura), sms });

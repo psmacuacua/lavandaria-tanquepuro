@@ -10,7 +10,7 @@ import {
   tabStyle, chipStyle, thStyle, tdStyle,
 } from "@/components/ui";
 import InspectionModal from "@/components/InspectionModal";
-import { novaCondicaoVazia, condicaoTemAvisos, calcularSobretaxa } from "@/components/inspection";
+import { novaCondicaoVazia, condicaoTemAvisos } from "@/components/inspection";
 
 export default function FaturacaoPage() {
   const { user } = useAuth();
@@ -45,22 +45,24 @@ export default function FaturacaoPage() {
   ), [articles, catFilter, search]);
 
   function addToCart(article) {
-    setCart(prev => {
-      const existing = prev.find(p => p.articleId === article.id);
-      if (existing) return prev.map(p => p.articleId === article.id ? { ...p, qtd: p.qtd + 1 } : p);
-      return [...prev, { articleId: article.id, nome: article.nome, categoria: article.categoria, precoBase: article.precoBase, precoDesconto: article.precoDesconto, qtd: 1, comDesconto: true, condicao: novaCondicaoVazia() }];
-    });
+    setCart(prev => [...prev, {
+      lineId: `${article.id}-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      articleId: article.id, nome: article.nome, categoria: article.categoria,
+      precoBase: article.precoBase, precoDesconto: article.precoDesconto, qtd: 1, comDesconto: true,
+      condicao: novaCondicaoVazia(),
+    }]);
   }
-  function updateQtd(id, qtd) { setCart(prev => prev.map(p => p.articleId === id ? { ...p, qtd: Math.max(1, qtd) } : p)); }
-  function toggleDesconto(id) { setCart(prev => prev.map(p => p.articleId === id ? { ...p, comDesconto: !p.comDesconto } : p)); }
-  function removeFromCart(id) { setCart(prev => prev.filter(p => p.articleId !== id)); }
-  function saveCondicao(id, condicao) { setCart(prev => prev.map(p => p.articleId === id ? { ...p, condicao } : p)); setInspectingId(null); }
+  function updateQtd(lineId, qtd) { setCart(prev => prev.map(p => p.lineId === lineId ? { ...p, qtd: Math.max(1, qtd) } : p)); }
+  function toggleDesconto(lineId) { setCart(prev => prev.map(p => p.lineId === lineId ? { ...p, comDesconto: !p.comDesconto } : p)); }
+  function removeFromCart(lineId) { setCart(prev => prev.filter(p => p.lineId !== lineId)); }
+  function saveCondicao(lineId, condicao) { setCart(prev => prev.map(p => p.lineId === lineId ? { ...p, condicao } : p)); setInspectingId(null); }
 
   const [inspectingId, setInspectingId] = useState(null);
+  const sobretaxaConfigurada = Number(settings?.sobretaxaManchaDificil ?? 50);
 
   const cartLines = cart.map(c => {
     const unit = c.comDesconto ? c.precoDesconto : c.precoBase;
-    const sobretaxa = calcularSobretaxa(c.condicao);
+    const sobretaxa = c.condicao?.manchaDificil ? sobretaxaConfigurada : 0;
     return { ...c, precoUnit: unit, subtotal: unit * c.qtd + sobretaxa, sobretaxa };
   });
   const subtotalBase = cartLines.reduce((s, c) => s + c.precoBase * c.qtd, 0);
@@ -74,12 +76,12 @@ export default function FaturacaoPage() {
   async function finalizarFatura(statusInicial) {
     if (cartLines.length === 0) return;
     const payload = {
-      clienteId, subtotal: subtotalBase, desconto, total,
+      clienteId,
       status: statusInicial, metodoPagamento: statusInicial === "Pago" ? pendingMethod : null,
       itens: cartLines.map(c => ({
         artigoId: c.articleId, nome: c.nome, categoria: c.categoria, qtd: c.qtd,
-        precoUnit: c.precoUnit, subtotal: c.subtotal, comDesconto: c.comDesconto,
-        condicao: c.condicao, sobretaxa: c.sobretaxa,
+        precoBase: c.precoBase, precoUnit: c.precoUnit, comDesconto: c.comDesconto,
+        condicao: c.condicao,
       })),
     };
     const d = await api.post("/invoices", payload);
@@ -185,20 +187,20 @@ export default function FaturacaoPage() {
                 <div style={{ display: "flex", flexDirection: "column", gap: 8, maxHeight: 260, overflowY: "auto", marginBottom: 12 }}>
                   {cartLines.length === 0 && <div style={{ color: C.inkSoft, fontSize: 13 }}>Adiciona artigos da lista à esquerda.</div>}
                   {cartLines.map(c => (
-                    <div key={c.articleId} style={{ border: `1px solid ${condicaoTemAvisos(c.condicao) ? C.amber : C.border}`, borderRadius: 9, padding: 9 }}>
+                    <div key={c.lineId} style={{ border: `1px solid ${condicaoTemAvisos(c.condicao) ? C.amber : C.border}`, borderRadius: 9, padding: 9 }}>
                       <div style={{ display: "flex", justifyContent: "space-between" }}>
                         <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{c.nome}</div>
-                        <button onClick={() => removeFromCart(c.articleId)} style={{ border: "none", background: "none", cursor: "pointer" }}><Trash2 size={14} color={C.red} /></button>
+                        <button onClick={() => removeFromCart(c.lineId)} style={{ border: "none", background: "none", cursor: "pointer" }}><Trash2 size={14} color={C.red} /></button>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 6 }}>
-                        <input type="number" min="1" value={c.qtd} onChange={e => updateQtd(c.articleId, Number(e.target.value))} style={{ width: 54, padding: "4px 6px", borderRadius: 7, border: `1px solid ${C.border}`, fontSize: 12.5 }} />
+                        <input type="number" min="1" value={c.qtd} onChange={e => updateQtd(c.lineId, Number(e.target.value))} style={{ width: 54, padding: "4px 6px", borderRadius: 7, border: `1px solid ${C.border}`, fontSize: 12.5 }} />
                         <label style={{ fontSize: 11.5, color: C.inkSoft, display: "flex", gap: 5, alignItems: "center" }}>
-                          <input type="checkbox" checked={c.comDesconto} onChange={() => toggleDesconto(c.articleId)} /> desconto
+                          <input type="checkbox" checked={c.comDesconto} onChange={() => toggleDesconto(c.lineId)} /> desconto
                         </label>
                         <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 13 }}>{formatMT(c.subtotal)}</div>
                       </div>
                       <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 7, paddingTop: 7, borderTop: `1px dashed ${C.border}` }}>
-                        <button onClick={() => setInspectingId(c.articleId)} style={{
+                        <button onClick={() => setInspectingId(c.lineId)} style={{
                           display: "inline-flex", alignItems: "center", gap: 5, border: "none", background: "none", cursor: "pointer",
                           color: condicaoTemAvisos(c.condicao) ? C.amber : C.inkSoft, fontSize: 11.5, fontWeight: 600, fontFamily: bodyFont
                         }}>
@@ -215,10 +217,11 @@ export default function FaturacaoPage() {
                 </div>
 
                 {inspectingId !== null && (() => {
-                  const item = cart.find(c => c.articleId === inspectingId);
+                  const item = cart.find(c => c.lineId === inspectingId);
                   if (!item) return null;
                   return (
                     <InspectionModal itemNome={item.nome} condicao={item.condicao || novaCondicaoVazia()}
+                      sobretaxaValor={sobretaxaConfigurada}
                       onSave={cond => saveCondicao(inspectingId, cond)} onClose={() => setInspectingId(null)} />
                   );
                 })()}
@@ -400,6 +403,7 @@ function InvoiceDetail({ invoice, client, settings, onClose, onMarkPaid, onSetMe
 
       {inspectingItem && (
         <InspectionModal itemNome={inspectingItem.nome} condicao={inspectingItem.condicao || novaCondicaoVazia()}
+          sobretaxaValor={Number(settings?.sobretaxaManchaDificil ?? 50)}
           onSave={async cond => { await onUpdateItemCondicao(invoice.id, inspectingItem.id, cond); setInspectingItem(null); }}
           onClose={() => setInspectingItem(null)} />
       )}

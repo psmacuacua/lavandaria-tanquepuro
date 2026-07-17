@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { X, AlertTriangle, ClipboardCheck } from "lucide-react";
 import { C, displayFont, bodyFont, monoFont, Input, Label, Btn } from "@/components/ui";
-import { DEFEITOS_OPCOES, DEFORMACOES_OPCOES, SOBRETAXA_MANCHA_DIFICIL } from "@/components/inspection";
+import { DEFEITOS_OPCOES, DEFORMACOES_OPCOES } from "@/components/inspection";
 
 function Check({ checked, onChange, label }) {
   return (
@@ -25,7 +25,7 @@ function SectionTitle({ n, children }) {
   );
 }
 
-export default function InspectionModal({ itemNome, condicao, onSave, onClose }) {
+export default function InspectionModal({ itemNome, condicao, onSave, onClose, sobretaxaValor = 50 }) {
   const [c, setC] = useState(condicao);
 
   function setField(key, value) { setC(prev => ({ ...prev, [key]: value })); }
@@ -59,7 +59,7 @@ export default function InspectionModal({ itemNome, condicao, onSave, onClose })
           <Check label="Sinais de oxidação ou mofo (manchas antigas / de guardado)" checked={c.oxidacaoMofo} onChange={e => setField("oxidacaoMofo", e.target.checked)} />
           <Check label="Desbotamento (sol, desodorante ou químicos)" checked={c.desbotamento} onChange={e => setField("desbotamento", e.target.checked)} />
           <div style={{ background: C.amberSoft, borderRadius: 10, padding: "10px 12px", marginTop: 6 }}>
-            <Check label={`Mancha difícil — café, sangue, tinta de caneta, vinho, etc. (requer tratamento especial, +${SOBRETAXA_MANCHA_DIFICIL} MT)`} checked={c.manchaDificil} onChange={e => setField("manchaDificil", e.target.checked)} />
+            <Check label={`Mancha difícil — café, sangue, tinta de caneta, vinho, etc. (requer tratamento especial, +${sobretaxaValor} MT)`} checked={c.manchaDificil} onChange={e => setField("manchaDificil", e.target.checked)} />
           </div>
 
           <SectionTitle n={3}>Características originais da peça</SectionTitle>
@@ -93,7 +93,7 @@ export default function InspectionModal({ itemNome, condicao, onSave, onClose })
 
           {c.manchaDificil && (
             <div style={{ marginTop: 14, display: "flex", alignItems: "center", gap: 8, background: C.redSoft, color: C.red, padding: "9px 12px", borderRadius: 10, fontSize: 12.5, fontWeight: 600 }}>
-              <AlertTriangle size={15} /> Sobretaxa de tratamento especial: +{SOBRETAXA_MANCHA_DIFICIL} MT será somada a este artigo.
+              <AlertTriangle size={15} /> Sobretaxa de tratamento especial: +{sobretaxaValor} MT será somada a este artigo.
             </div>
           )}
 

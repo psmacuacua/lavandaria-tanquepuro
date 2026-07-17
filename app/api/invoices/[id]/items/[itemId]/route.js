@@ -1,13 +1,17 @@
 const { NextResponse } = require("next/server");
 const { prisma } = require("@/lib/prisma");
 const { getSessionFromRequest } = require("@/lib/auth");
-const { calcularSobretaxa } = require("@/lib/sobretaxa");
+const { getEmpresaConfig } = require("@/lib/empresaConfig");
+
+function round2(n) { return Math.round(n * 100) / 100; }
 
 /**
  * Body: { condicao }
  * Permite atualizar/consultar a ficha de inspeção de um artigo mesmo depois da fatura
  * já ter sido emitida. Se a mancha difícil for marcada/desmarcada, a sobretaxa desse
- * item, e consequentemente o IVA e o total da fatura, são recalculados automaticamente.
+ * item (usando o valor atual configurado), e consequentemente o desconto, o IVA e o
+ * total da fatura, são recalculados a partir de TODOS os itens (fonte da verdade:
+ * preco_base_unitario e preco_unitario de cada item, nunca o subtotal já com sobretaxa).
  */
 async function PATCH(req, { params }) {
   const session = getSessionFromRequest(req);
@@ -26,28 +30,30 @@ async function PATCH(req, { params }) {
   if (!item) return NextResponse.json({ error: "Item não encontrado nesta fatura." }, { status: 404 });
 
   const { condicao } = await req.json();
-  const novaSobretaxa = calcularSobretaxa(condicao);
-  const antigaSobretaxa = Number(item.sobretaxa || 0);
-  const precoSemSobretaxa = Number(item.subtotal) - antigaSobretaxa;
-  const novoSubtotalItem = precoSemSobretaxa + novaSobretaxa;
+  const config = await getEmpresaConfig();
+  const sobretaxaValor = Number(config.sobretaxaManchaDificil || 0);
+  const novaSobretaxa = (condicao && condicao.manchaDificil) ? sobretaxaValor : 0;
+  const novoSubtotalItem = round2(Number(item.precoUnitario) * item.quantidade + novaSobretaxa);
 
   await prisma.faturaItem.update({
     where: { id: itemId },
     data: { condicao: condicao || null, sobretaxa: novaSobretaxa, subtotal: novoSubtotalItem },
   });
 
-  // Recalcula os totais da fatura com base em todos os itens (após a alteração deste)
+  // Recalcula os totais da fatura a partir de TODOS os itens (preços base/unitários, não o subtotal antigo)
   const itensAtualizados = await prisma.faturaItem.findMany({ where: { faturaId } });
-  const novoSubtotalBase = itensAtualizados.reduce((s, it) => s + (Number(it.subtotal) - Number(it.sobretaxa || 0)), 0);
-  const novasSobretaxas = itensAtualizados.reduce((s, it) => s + Number(it.sobretaxa || 0), 0);
-  const baseTributavel = novoSubtotalBase - Number(fatura.desconto) + novasSobretaxas;
+  const novoSubtotalBase = round2(itensAtualizados.reduce((s, it) => s + Number(it.precoBaseUnitario) * it.quantidade, 0));
+  const somaDescontada = round2(itensAtualizados.reduce((s, it) => s + Number(it.precoUnitario) * it.quantidade, 0));
+  const novoDesconto = round2(novoSubtotalBase - somaDescontada);
+  const novasSobretaxas = round2(itensAtualizados.reduce((s, it) => s + Number(it.sobretaxa || 0), 0));
+  const baseTributavel = round2(somaDescontada + novasSobretaxas);
   const ivaPercentagem = Number(fatura.ivaPercentagem);
-  const ivaValor = Math.round(baseTributavel * (ivaPercentagem / 100) * 100) / 100;
-  const novoTotal = Math.round((baseTributavel + ivaValor) * 100) / 100;
+  const ivaValor = ivaPercentagem > 0 ? round2(baseTributavel * (ivaPercentagem / 100)) : 0;
+  const novoTotal = round2(baseTributavel + ivaValor);
 
   const faturaAtualizada = await prisma.fatura.update({
     where: { id: faturaId },
-    data: { subtotal: novoSubtotalBase, ivaValor, total: novoTotal },
+    data: { subtotal: novoSubtotalBase, desconto: novoDesconto, ivaValor, total: novoTotal },
     include: { itens: true, utilizador: true },
   });
 
@@ -55,6 +61,8 @@ async function PATCH(req, { params }) {
     item: { id: itemId, condicao: condicao || null, sobretaxa: novaSobretaxa, subtotal: novoSubtotalItem },
     fatura: {
       subtotal: Number(faturaAtualizada.subtotal),
+      desconto: Number(faturaAtualizada.desconto),
+      ivaPercentagem: Number(faturaAtualizada.ivaPercentagem),
       ivaValor: Number(faturaAtualizada.ivaValor),
       total: Number(faturaAtualizada.total),
     },

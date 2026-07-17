@@ -66,28 +66,25 @@ Na página **Serviços & Artigos** existe um bloco "Importar / Exportar Excel":
 - **Exportar .xlsx**: descarrega um ficheiro com uma folha por categoria, no mesmo formato
   dos ficheiros originais (`Nome`, `preco_base`, `Desconto`, `disponivel`).
 
-## 6. Módulo de SMS (avisar clientes)
+## 6. Mensagens SMS (3 tipos, personalizáveis pelo Admin)
 
-Ficheiro: `lib/sms.js`, usado em:
-- `app/api/notify/sms/route.js` (envio manual, ex: botão na página de Clientes)
-- `app/api/invoices/[id]/route.js` (envio automático opcional ao mudar o estado do pedido
-  para "Pronto para Entrega" ou "Entregue" — a interface pergunta antes de enviar)
+Os textos das mensagens **não estão fixos no código** — ficam guardados na tabela
+`empresa_config` e são editados em **Configurações → Mensagens SMS**, com placeholders
+`{nome}`, `{empresa}` e (só na mensagem do link) `{link}`:
 
-Por omissão usa a **Twilio**. Para ativar o envio real, define no `.env`:
+1. **Roupa pronta** — botão "Estado do pedido" na fatura, ao mudar para "Pronto para
+   Entrega" (pede confirmação antes de enviar).
+2. **Link do portal do cliente** — botão de link na página Clientes. Gera um link único
+   e permanente por cliente (`/portal/{token}`), sem necessidade de login, onde o cliente
+   vê: total em dívida, lista de faturas por pagar, estado do pedido atual (pronto ou não)
+   e o histórico de lavagens.
+3. **Promocional** — botão de megafone na página Clientes, para um cliente ou (botão no
+   topo da página) para todos os clientes com telefone registado de uma vez.
 
-```
-TWILIO_ACCOUNT_SID="ACxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-TWILIO_AUTH_TOKEN="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
-TWILIO_FROM_NUMBER="+1xxxxxxxxxx"
-```
-
-Sem estas variáveis, o módulo corre em **modo simulação**: as mensagens ficam registadas na
-consola do servidor (terminal onde correste `npm run dev`) em vez de serem enviadas — útil
-para testar sem gastar créditos.
-
-Para usar outro fornecedor de SMS (ex: um gateway local moçambicano), basta alterar a função
-`sendViaProvider` em `lib/sms.js` — o resto do módulo (templates, validação de número,
-envio em massa) mantém-se igual.
+Por omissão usa a **Twilio** (`lib/sms.js`); sem `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN`/
+`TWILIO_FROM_NUMBER` no `.env`, corre em modo simulação (mensagens só na consola do servidor).
+Define também `APP_URL` no `.env` com o endereço público da app, para o link do portal
+ficar correto (ex: `https://a-tua-app.vercel.app`).
 
 ## 7. Permissões: funcionário vs admin
 
@@ -136,12 +133,18 @@ estado da peça antes de a lavar — útil para provar ao cliente que um defeito
 
 Esta ficha fica gravada por artigo dentro da fatura (`fatura_itens.condicao`, campo JSON) e
 aparece resumida no recibo/detalhe da fatura, com a sobretaxa destacada quando aplicável.
-A sobretaxa entra automaticamente no total da fatura.
+
+**Importante:** a sobretaxa é **por artigo**, não por fatura — cada clique em "adicionar ao
+carrinho" cria uma linha própria (mesmo que seja o mesmo tipo de artigo), por isso só o(s)
+artigo(s) marcado(s) com mancha difícil levam sobretaxa; os restantes na mesma fatura não são
+afetados. O valor da sobretaxa é configurável em **Configurações → IVA → Sobretaxa por mancha
+difícil** (deixa de estar fixo em 50 MT).
 
 **A ficha pode ser vista e editada mesmo depois da fatura já ter sido emitida** — basta abrir
-a fatura na lista e clicar em "Ver / editar inspeção" em qualquer artigo. Se a mancha difícil
-for marcada ou desmarcada depois de criada, a sobretaxa, o IVA e o total da fatura são
-recalculados automaticamente (`app/api/invoices/[id]/items/[itemId]/route.js`).
+a fatura na lista e clicar em "Ver / editar inspeção" em qualquer artigo. Ao gravar, o servidor
+recalcula a sobretaxa desse item, o desconto, o IVA e o total da fatura inteira a partir do
+preço base e preço aplicado de cada item (nunca a partir de um total já calculado antes),
+para o total apresentado ficar sempre correto (`app/api/invoices/[id]/items/[itemId]/route.js`).
 
 ## 10. IVA configurável
 
@@ -202,3 +205,8 @@ app/artigos, app/utilizadores  páginas da aplicação
 > não existiam), corre `npx prisma db push` (recomendado, especialmente em TiDB/PlanetScale
 > onde `migrate dev` pode falhar por não haver permissão para a shadow database), ou aplica
 > manualmente `prisma/fix_missing_columns_v2.sql` na tua base de dados.
+>
+> Versão mais recente: corrigido o bug em que o total da fatura não atualizava ao editar a
+> inspeção, a sobretaxa passou a ser por artigo (e configurável), e foram adicionados o
+> portal do cliente e as 3 mensagens SMS personalizáveis. Corre `npx prisma db push` outra
+> vez, ou aplica `prisma/fix_missing_columns_v3.sql` manualmente.

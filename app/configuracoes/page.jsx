@@ -1,6 +1,6 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { Building2, Upload, Check, Trash2 } from "lucide-react";
+import { Building2, Upload, Check, Trash2, MessageSquareText } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/apiClient";
@@ -122,7 +122,10 @@ export default function ConfiguracoesPage() {
             <CheckRow checked={form.ivaAtivo} onChange={e => set("ivaAtivo", e.target.checked)} label="Aplicar IVA nas faturas" />
             <Label>Taxa de IVA (%)</Label>
             <Input type="number" step="0.01" min="0" max="100" value={form.ivaPercentagem} onChange={e => set("ivaPercentagem", e.target.value)} disabled={!form.ivaAtivo} />
-            <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 6 }}>Muda aqui sempre que a taxa oficial for atualizada — aplica-se a partir da próxima fatura emitida.</div>
+            <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 6, marginBottom: 14 }}>Muda aqui sempre que a taxa oficial for atualizada — aplica-se a partir da próxima fatura emitida.</div>
+            <Label>Sobretaxa por mancha difícil (MT)</Label>
+            <Input type="number" step="0.01" min="0" value={form.sobretaxaManchaDificil} onChange={e => set("sobretaxaManchaDificil", e.target.value)} />
+            <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 6 }}>Valor acrescentado a um artigo quando a inspeção assinala "mancha difícil" (café, sangue, tinta, vinho...). Aplica-se por artigo, não por fatura.</div>
           </Card>
 
           <Card>
@@ -139,6 +142,38 @@ export default function ConfiguracoesPage() {
           {msg && <div style={{ fontSize: 12.5, color: msg.startsWith("Erro") ? C.red : C.mint }}>{msg}</div>}
         </div>
       </div>
+
+      <Card style={{ marginTop: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
+          <MessageSquareText size={18} color={C.cobalt} />
+          <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink }}>Mensagens SMS</div>
+        </div>
+        <div style={{ fontSize: 12, color: C.inkSoft, marginBottom: 16 }}>
+          Usa <code>{"{nome}"}</code> para o nome do cliente, <code>{"{empresa}"}</code> para o nome da lavandaria
+          {" "}e, só na mensagem do link, <code>{"{link}"}</code> para o endereço do portal do cliente.
+        </div>
+
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 14 }} className="msg-grid">
+          <div>
+            <Label>1. Roupa pronta para entrega</Label>
+            <textarea value={form.mensagemPronto} onChange={e => set("mensagemPronto", e.target.value)} rows={5}
+              style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${C.border}`, fontFamily: bodyFont, fontSize: 13, resize: "vertical" }} />
+            <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 4 }}>Enviada (com confirmação) ao mudar um pedido para "Pronto para Entrega".</div>
+          </div>
+          <div>
+            <Label>2. Link do portal (dívidas e estado)</Label>
+            <textarea value={form.mensagemPortal} onChange={e => set("mensagemPortal", e.target.value)} rows={5}
+              style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${C.border}`, fontFamily: bodyFont, fontSize: 13, resize: "vertical" }} />
+            <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 4 }}>Botão "Enviar link" na página Clientes — o cliente vê faturas em dívida, estado do pedido e histórico.</div>
+          </div>
+          <div>
+            <Label>3. Promocional</Label>
+            <textarea value={form.mensagemPromocional} onChange={e => set("mensagemPromocional", e.target.value)} rows={5}
+              style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${C.border}`, fontFamily: bodyFont, fontSize: 13, resize: "vertical" }} />
+            <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 4 }}>Botão "Enviar promoção" na página Clientes — a um cliente ou a todos de uma vez.</div>
+          </div>
+        </div>
+      </Card>
     </AppShell>
   );
 }
