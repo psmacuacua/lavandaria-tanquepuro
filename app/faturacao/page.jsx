@@ -128,12 +128,12 @@ export default function FaturacaoPage() {
 
   return (
     <AppShell>
-      <h1 style={{ fontFamily: displayFont, fontSize: 26, color: C.ink, marginBottom: 4 }}>Faturação & Pagamentos</h1>
-      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>{user?.role === "Admin" ? "Cria faturas e controla o estado dos pagamentos" : "Cria pedidos e acompanha os que atendeste"}</div>
+      <h1 style={{ fontFamily: displayFont, fontSize: 26, color: C.ink, marginBottom: 4 }}>Facturação & Pagamentos</h1>
+      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>{user?.role === "Admin" ? "Cria facturas e controla o estado dos pagamentos" : "Cria pedidos e acompanha os que atendeste"}</div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
         <button onClick={() => setTab("nova")} style={tabStyle(tab === "nova")}>Nova Fatura</button>
-        <button onClick={() => setTab("lista")} style={tabStyle(tab === "lista")}>{user?.role === "Admin" ? "Faturas" : "Meus Pedidos"} ({invoices.length})</button>
+        <button onClick={() => setTab("lista")} style={tabStyle(tab === "lista")}>{user?.role === "Admin" ? "Facturas" : "Meus Pedidos"} ({invoices.length})</button>
       </div>
 
       {loading ? <div style={{ color: C.inkSoft }}>A carregar...</div> : (
@@ -239,7 +239,7 @@ export default function FaturacaoPage() {
                   <option value="">Sem pagamento (Pendente)</option>
                   {PAYMENT_METHODS.map(m => <option key={m} value={m}>Pago via {m}</option>)}
                 </Select>
-                <Btn onClick={() => finalizarFatura(pendingMethod ? "Pago" : "Pendente")} disabled={cartLines.length === 0} icon={FileText}>Emitir Fatura</Btn>
+                <Btn onClick={() => finalizarFatura(pendingMethod ? "Pago" : "Pendente")} disabled={cartLines.length === 0} icon={FileText}>Emitir Factura</Btn>
               </Card>
             </div>
           )}
@@ -288,7 +288,7 @@ export default function FaturacaoPage() {
                         </tr>
                       );
                     })}
-                    {filteredInvoices.length === 0 && <tr><td colSpan={7} style={{ padding: 20, color: C.inkSoft, textAlign: "center" }}>Sem faturas.</td></tr>}
+                    {filteredInvoices.length === 0 && <tr><td colSpan={7} style={{ padding: 20, color: C.inkSoft, textAlign: "center" }}>Sem facturas.</td></tr>}
                   </tbody>
                 </table>
               </div>
@@ -328,7 +328,7 @@ function InvoiceDetail({ invoice, client, settings, onClose, onMarkPaid, onSetMe
           <div style={{ textAlign: "center", marginBottom: 16 }}>
             {settings?.logoUrl && <img src={settings.logoUrl} alt="Logótipo" style={{ height: 34, margin: "0 auto 8px", display: "block", objectFit: "contain" }} />}
             <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 17, color: C.ink }}>{nomeEmpresa.toUpperCase()}</div>
-            <div style={{ fontSize: 11.5, color: C.inkSoft }}>Recibo / Fatura {invoice.numero}</div>
+            <div style={{ fontSize: 11.5, color: C.inkSoft }}>Recibo / Factura {invoice.numero}</div>
             <div style={{ fontSize: 11, color: C.inkSoft }}>{formatDate(invoice.data)}</div>
             {settings?.mostrarEndereco && settings?.endereco && <div style={{ fontSize: 10, color: C.inkSoft, marginTop: 4 }}>{settings.endereco}</div>}
             <div style={{ fontSize: 10, color: C.inkSoft, display: "flex", justifyContent: "center", gap: 8, flexWrap: "wrap", marginTop: 2 }}>
