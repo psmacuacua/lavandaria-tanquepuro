@@ -38,7 +38,7 @@ export default function AppShell({ children }) {
 
   const items = [
     { href: "/dashboard", label: "Painel Financeiro", icon: Home },
-    { href: "/faturacao", label: "Faturação & Pagamentos", icon: FileText },
+    { href: "/faturacao", label: "Facturação & Pagamentos", icon: FileText },
     { href: "/clientes", label: "Clientes", icon: Users },
     { href: "/artigos", label: "Serviços & Artigos", icon: Shirt },
   ];
