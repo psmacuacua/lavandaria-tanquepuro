@@ -80,7 +80,7 @@ export default function ConfiguracoesPage() {
   return (
     <AppShell>
       <h1 style={{ fontFamily: displayFont, fontSize: 26, color: C.ink, marginBottom: 4 }}>Configurações da Lavandaria</h1>
-      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>Dados que aparecem na fatura/recibo e taxa de IVA aplicada</div>
+      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>Dados que aparecem na factura/recibo e taxa de IVA aplicada</div>
 
       <div style={{ display: "grid", gridTemplateColumns: "1.3fr 1fr", gap: 16 }}>
         <Card>
