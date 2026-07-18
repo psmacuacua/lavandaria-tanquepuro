@@ -132,7 +132,7 @@ export default function FaturacaoPage() {
       <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>{user?.role === "Admin" ? "Cria facturas e controla o estado dos pagamentos" : "Cria pedidos e acompanha os que atendeste"}</div>
 
       <div style={{ display: "flex", gap: 8, marginBottom: 18 }}>
-        <button onClick={() => setTab("nova")} style={tabStyle(tab === "nova")}>Nova Fatura</button>
+        <button onClick={() => setTab("nova")} style={tabStyle(tab === "nova")}>Nova Factura</button>
         <button onClick={() => setTab("lista")} style={tabStyle(tab === "lista")}>{user?.role === "Admin" ? "Facturas" : "Meus Pedidos"} ({invoices.length})</button>
       </div>
 
