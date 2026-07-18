@@ -9,16 +9,16 @@ datasource db {
 }
 
 model Categoria {
-  id     Int      @id @default(autoincrement())
-  nome   String   @unique @db.VarChar(60)
-  corHex String   @default("#24427A") @map("cor_hex") @db.VarChar(7)
+  id      Int      @id @default(autoincrement())
+  nome    String   @unique @db.VarChar(60)
+  corHex  String   @default("#24427A") @map("cor_hex") @db.VarChar(7)
   artigos Artigo[]
 
   @@map("categorias")
 }
 
 model Utilizador {
-  id                 Int      @id @default(autoincrement())
+  id                 Int       @id @default(autoincrement())
   username           String    @unique @db.VarChar(50)
   passwordHash       String    @map("password_hash") @db.VarChar(255)
   nome               String    @db.VarChar(120)
@@ -68,7 +68,7 @@ enum StatusPagamento {
 
 enum StatusOperacional {
   Pendente
-  Em_Processo          @map("Em Processo")
+  Em_Processo         @map("Em Processo")
   Pronto_para_Entrega @map("Pronto para Entrega")
   Entregue
   Devolvido
@@ -84,22 +84,22 @@ enum MetodoPagamento {
 }
 
 model Fatura {
-  id                Int             @id @default(autoincrement())
-  numero            String          @unique @db.VarChar(30)
-  clienteId         Int             @map("cliente_id")
-  cliente           Cliente         @relation(fields: [clienteId], references: [id])
-  utilizadorId      Int?            @map("utilizador_id")
-  utilizador        Utilizador?     @relation(fields: [utilizadorId], references: [id])
-  dataCriacao       DateTime        @default(now()) @map("data_criacao")
-  subtotal          Decimal         @default(0) @db.Decimal(10, 2)
-  desconto          Decimal         @default(0) @db.Decimal(10, 2)
-  ivaPercentagem    Decimal         @default(0) @map("iva_percentagem") @db.Decimal(5, 2)
-  ivaValor          Decimal         @default(0) @map("iva_valor") @db.Decimal(10, 2)
-  total             Decimal         @default(0) @db.Decimal(10, 2)
+  id                Int               @id @default(autoincrement())
+  numero            String            @unique @db.VarChar(30)
+  clienteId         Int               @map("cliente_id")
+  cliente           Cliente           @relation(fields: [clienteId], references: [id])
+  utilizadorId      Int?              @map("utilizador_id")
+  utilizador        Utilizador?       @relation(fields: [utilizadorId], references: [id])
+  dataCriacao       DateTime          @default(now()) @map("data_criacao")
+  subtotal          Decimal           @default(0) @db.Decimal(10, 2)
+  desconto          Decimal           @default(0) @db.Decimal(10, 2)
+  ivaPercentagem    Decimal           @default(0) @map("iva_percentagem") @db.Decimal(5, 2)
+  ivaValor          Decimal           @default(0) @map("iva_valor") @db.Decimal(10, 2)
+  total             Decimal           @default(0) @db.Decimal(10, 2)
   status            StatusPagamento   @default(Pendente)
   statusOperacional StatusOperacional @default(Pendente) @map("status_operacional")
   metodoPagamento   MetodoPagamento?  @map("metodo_pagamento")
-  dataPagamento     DateTime?         @map("data_pagamento")
+  dataPagamento      DateTime?        @map("data_pagamento")
   itens             FaturaItem[]
 
   @@index([clienteId])
@@ -126,17 +126,9 @@ model EmpresaConfig {
   mostrarContacto        Boolean  @default(true) @map("mostrar_contacto")
   mostrarWebsite         Boolean  @default(false) @map("mostrar_website")
   mostrarContaBancaria   Boolean  @default(false) @map("mostrar_conta_bancaria")
-  
-  // ALTERAÇÃO: Removido @default para evitar erro de SQL no TiDB/MySQL
-  // mensagemPronto         String   @default("Olá {nome}, a sua roupa na {empresa} está pronta para entrega. Obrigado pela preferência!") @map("mensagem_pronto") @db.Text
-  mensagemPronto         String   @map("mensagem_pronto") @db.Text
-  
-  // mensagemPortal         String   @default("Olá {nome}, veja o estado do seu pedido e as faturas pendentes aqui: {link}") @map("mensagem_portal") @db.Text
-  mensagemPortal         String   @map("mensagem_portal") @db.Text
-  
-  // mensagemPromocional    String   @default("Olá {nome}, aproveite: lave mais de 5 artigos numa só entrega e ganhe desconto especial na {empresa}!") @map("mensagem_promocional") @db.Text
-  mensagemPromocional    String   @map("mensagem_promocional") @db.Text
-  
+  mensagemPronto         String   @default("Olá {nome}, a sua roupa na {empresa} está pronta para entrega. Obrigado pela preferência!") @map("mensagem_pronto") @db.Text
+  mensagemPortal         String   @default("Olá {nome}, veja o estado do seu pedido e as faturas pendentes aqui: {link}") @map("mensagem_portal") @db.Text
+  mensagemPromocional    String   @default("Olá {nome}, aproveite: lave mais de 5 artigos numa só entrega e ganhe desconto especial na {empresa}!") @map("mensagem_promocional") @db.Text
   atualizadoEm           DateTime @updatedAt @map("atualizado_em")
 
   @@map("empresa_config")
@@ -155,11 +147,7 @@ model FaturaItem {
   precoUnitario     Decimal  @map("preco_unitario") @db.Decimal(10, 2)
   subtotal          Decimal  @db.Decimal(10, 2)
   comDesconto       Boolean  @default(true) @map("com_desconto")
-  
-  // ALTERAÇÃO: Removido possível @default para Json
-  // condicao          Json?    @default(...) @map("condicao")
   condicao          Json?    @map("condicao")
-
   sobretaxa         Decimal  @default(0) @map("sobretaxa") @db.Decimal(10, 2)
 
   @@index([faturaId])

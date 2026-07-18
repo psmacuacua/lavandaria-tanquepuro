@@ -38,11 +38,19 @@ export default function ClientesPage() {
     setEditingId(null);
   }
 
+  function feedback(d, sucesso) {
+    if (d.simulated) return `${sucesso} (simulado — ver consola do servidor)`;
+    if (d.estimatedMessagesRemaining !== undefined && d.estimatedMessagesRemaining !== null) {
+      return `${sucesso} · restam ~${d.estimatedMessagesRemaining} SMS no saldo (${Number(d.remainingBalance).toFixed(2)} MZN)`;
+    }
+    return sucesso;
+  }
+
   async function enviarLink(client) {
     setRowMsg(s => ({ ...s, [client.id]: "A enviar..." }));
     try {
       const d = await api.post("/notify/portal", { clienteId: client.id });
-      setRowMsg(s => ({ ...s, [client.id]: d.simulated ? "Link enviado (simulado — ver consola do servidor)" : "Link enviado!" }));
+      setRowMsg(s => ({ ...s, [client.id]: feedback(d, "Link enviado!") }));
     } catch (e) {
       setRowMsg(s => ({ ...s, [client.id]: e.message }));
     }
@@ -51,7 +59,7 @@ export default function ClientesPage() {
     setRowMsg(s => ({ ...s, [client.id]: "A enviar..." }));
     try {
       const d = await api.post("/notify/promo", { clienteId: client.id });
-      setRowMsg(s => ({ ...s, [client.id]: d.simulated ? "Promoção enviada (simulado)" : "Promoção enviada!" }));
+      setRowMsg(s => ({ ...s, [client.id]: feedback(d, "Promoção enviada!") }));
     } catch (e) {
       setRowMsg(s => ({ ...s, [client.id]: e.message }));
     }

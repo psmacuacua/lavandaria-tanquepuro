@@ -72,19 +72,34 @@ Os textos das mensagens **não estão fixos no código** — ficam guardados na 
 `empresa_config` e são editados em **Configurações → Mensagens SMS**, com placeholders
 `{nome}`, `{empresa}` e (só na mensagem do link) `{link}`:
 
-1. **Roupa pronta** — botão "Estado do pedido" na fatura, ao mudar para "Pronto para
+1. **Roupa pronta** — botão "Estado do pedido" na factura, ao mudar para "Pronto para
    Entrega" (pede confirmação antes de enviar).
 2. **Link do portal do cliente** — botão de link na página Clientes. Gera um link único
    e permanente por cliente (`/portal/{token}`), sem necessidade de login, onde o cliente
-   vê: total em dívida, lista de faturas por pagar, estado do pedido atual (pronto ou não)
+   vê: total em dívida, lista de facturas por pagar, estado do pedido atual (pronto ou não)
    e o histórico de lavagens.
 3. **Promocional** — botão de megafone na página Clientes, para um cliente ou (botão no
    topo da página) para todos os clientes com telefone registado de uma vez.
 
-Por omissão usa a **Twilio** (`lib/sms.js`); sem `TWILIO_ACCOUNT_SID`/`TWILIO_AUTH_TOKEN`/
-`TWILIO_FROM_NUMBER` no `.env`, corre em modo simulação (mensagens só na consola do servidor).
-Define também `APP_URL` no `.env` com o endereço público da app, para o link do portal
-ficar correto (ex: `https://a-tua-app.vercel.app`).
+Fornecedor principal: **MozeSMS** (`lib/sms.js`, https://www.mozesms.com/api) — gateway
+moçambicano. Define no `.env`:
+
+```
+MOZESMS_API_KEY="mk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+MOZESMS_API_SECRET="sk_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+MOZESMS_SENDER_ID="MozeSMS"
+```
+
+O `.env` já incluído neste projecto tem as tuas credenciais MozeSMS preenchidas — só falta
+ajustares `DATABASE_URL`. Se preferires a Twilio, define em alternativa `TWILIO_ACCOUNT_SID`/
+`TWILIO_AUTH_TOKEN`/`TWILIO_FROM_NUMBER` (só é usada se as variáveis `MOZESMS_*` não estiverem
+definidas). Sem nenhum dos dois configurados, corre em modo simulação (mensagens só na
+consola do servidor). Define também `APP_URL` no `.env` com o endereço público da app, para
+o link do portal ficar correcto (ex: `https://a-tua-app.vercel.app`).
+
+**Importante:** o `.env` tem credenciais reais — nunca o envies para um repositório público
+(já está no `.gitignore`). Se a chave for exposta por engano, revoga-a imediatamente em
+my.mozesms.com → Gestão de APIs e gera uma nova.
 
 ## 7. Permissões: funcionário vs admin
 

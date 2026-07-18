@@ -44,7 +44,7 @@ export default function DashboardPage() {
     return { hoje, mes, pendente, totalFaturas: invoices.length, porCategoria, porStatusOp };
   }, [invoices]);
 
-  const chartData = CATEGORIES.map(c => ({ name: c.replace("Lavagem ", "Lav. ") .replace("Limpeza", "Limp"), total: Math.round(stats.porCategoria[c] || 0) }));
+  const chartData = CATEGORIES.map(c => ({ name: c.replace("Lavagem ", "Lav. "), total: Math.round(stats.porCategoria[c] || 0) }));
   const donutData = ORDER_STATUSES.map(s => ({ name: s, value: stats.porStatusOp[s] || 0 })).filter(d => d.value > 0);
   const recentInvoices = [...invoices].sort((a, b) => new Date(b.data) - new Date(a.data)).slice(0, 6);
   const clientName = id => clients.find(c => c.id === id)?.nome || "—";
@@ -70,7 +70,7 @@ export default function DashboardPage() {
             <div style={{ display: "flex", gap: 10 }}>
               <div style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12, padding: "12px 20px", textAlign: "center" }}>
                 <div style={{ color: C.gold, fontFamily: monoFont, fontWeight: 700, fontSize: 22 }}>{stats.totalFaturas}</div>
-                <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 10.5, letterSpacing: 0.5 }}>FACTURAS</div>
+                <div style={{ color: "rgba(255,255,255,0.65)", fontSize: 10.5, letterSpacing: 0.5 }}>FATURAS</div>
               </div>
               <div style={{ background: "rgba(255,255,255,0.1)", border: "1px solid rgba(255,255,255,0.18)", borderRadius: 12, padding: "12px 20px", textAlign: "center" }}>
                 <div style={{ color: C.gold, fontFamily: monoFont, fontWeight: 700, fontSize: 22 }}>{clients.length}</div>

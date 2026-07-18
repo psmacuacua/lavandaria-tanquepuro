@@ -21,7 +21,7 @@ async function PATCH(req, { params }) {
   const itemId = Number(params.itemId);
 
   const fatura = await prisma.fatura.findUnique({ where: { id: faturaId }, include: { itens: true } });
-  if (!fatura) return NextResponse.json({ error: "Fatura não encontrada." }, { status: 404 });
+  if (!fatura) return NextResponse.json({ error: "Factura não encontrada." }, { status: 404 });
   if (session.role !== "Admin" && fatura.utilizadorId !== session.id) {
     return NextResponse.json({ error: "Só podes alterar pedidos que tu próprio atendeste." }, { status: 403 });
   }

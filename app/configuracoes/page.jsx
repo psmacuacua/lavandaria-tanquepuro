@@ -1,10 +1,10 @@
 "use client";
 import React, { useEffect, useRef, useState } from "react";
-import { Building2, Upload, Check, Trash2, MessageSquareText } from "lucide-react";
+import { Building2, Upload, Check, Trash2, MessageSquareText, Wallet, RefreshCw } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/apiClient";
-import { C, displayFont, bodyFont, Card, Input, Label, Btn } from "@/components/ui";
+import { C, displayFont, bodyFont, monoFont, Card, Input, Label, Btn } from "@/components/ui";
 
 function CheckRow({ checked, onChange, label }) {
   return (
@@ -23,10 +23,23 @@ export default function ConfiguracoesPage() {
   const [saving, setSaving] = useState(false);
   const [msg, setMsg] = useState("");
   const fileInputRef = useRef(null);
+  const [balance, setBalance] = useState(null);
+  const [balanceError, setBalanceError] = useState("");
+  const [loadingBalance, setLoadingBalance] = useState(true);
 
   useEffect(() => {
     api.get("/settings").then(d => setForm(d.config));
+    loadBalance();
   }, []);
+
+  function loadBalance() {
+    setLoadingBalance(true);
+    setBalanceError("");
+    api.get("/notify/balance")
+      .then(d => setBalance(d))
+      .catch(e => setBalanceError(e.message))
+      .finally(() => setLoadingBalance(false));
+  }
 
   function set(key, value) { setForm(f => ({ ...f, [key]: value })); }
 
@@ -119,17 +132,17 @@ export default function ConfiguracoesPage() {
         <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           <Card>
             <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink, marginBottom: 10 }}>IVA</div>
-            <CheckRow checked={form.ivaAtivo} onChange={e => set("ivaAtivo", e.target.checked)} label="Aplicar IVA nas faturas" />
+            <CheckRow checked={form.ivaAtivo} onChange={e => set("ivaAtivo", e.target.checked)} label="Aplicar IVA nas facturas" />
             <Label>Taxa de IVA (%)</Label>
             <Input type="number" step="0.01" min="0" max="100" value={form.ivaPercentagem} onChange={e => set("ivaPercentagem", e.target.value)} disabled={!form.ivaAtivo} />
-            <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 6, marginBottom: 14 }}>Muda aqui sempre que a taxa oficial for atualizada — aplica-se a partir da próxima fatura emitida.</div>
+            <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 6, marginBottom: 14 }}>Muda aqui sempre que a taxa oficial for atualizada — aplica-se a partir da próxima factura emitida.</div>
             <Label>Sobretaxa por mancha difícil (MT)</Label>
             <Input type="number" step="0.01" min="0" value={form.sobretaxaManchaDificil} onChange={e => set("sobretaxaManchaDificil", e.target.value)} />
-            <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 6 }}>Valor acrescentado a um artigo quando a inspeção assinala "mancha difícil" (café, sangue, tinta, vinho...). Aplica-se por artigo, não por fatura.</div>
+            <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 6 }}>Valor acrescentado a um artigo quando a inspeção assinala "mancha difícil" (café, sangue, tinta, vinho...). Aplica-se por artigo, não por factura.</div>
           </Card>
 
           <Card>
-            <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink, marginBottom: 10 }}>Mostrar na fatura</div>
+            <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink, marginBottom: 10 }}>Mostrar na factura</div>
             <CheckRow checked={form.mostrarEndereco} onChange={e => set("mostrarEndereco", e.target.checked)} label="Endereço" />
             <CheckRow checked={form.mostrarNuit} onChange={e => set("mostrarNuit", e.target.checked)} label="NUIT" />
             <CheckRow checked={form.mostrarContacto} onChange={e => set("mostrarContacto", e.target.checked)} label="Contacto (telefone)" />
@@ -142,6 +155,50 @@ export default function ConfiguracoesPage() {
           {msg && <div style={{ fontSize: 12.5, color: msg.startsWith("Erro") ? C.red : C.mint }}>{msg}</div>}
         </div>
       </div>
+
+      <Card style={{ marginTop: 16 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+            <Wallet size={18} color={C.cobalt} />
+            <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 15.5, color: C.ink }}>Saldo SMS (MozeSMS)</div>
+          </div>
+          <button onClick={loadBalance} disabled={loadingBalance} title="Atualizar saldo" style={{ border: "none", background: "none", cursor: "pointer", display: "flex", alignItems: "center" }}>
+            <RefreshCw size={15} color={C.inkSoft} style={{ animation: loadingBalance ? "spin 1s linear infinite" : "none" }} />
+          </button>
+          <style>{"@keyframes spin { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }"}</style>
+        </div>
+        {loadingBalance && <div style={{ color: C.inkSoft, fontSize: 13, marginTop: 8 }}>A consultar saldo...</div>}
+        {!loadingBalance && balanceError && (
+          <div style={{ color: C.inkSoft, fontSize: 12.5, marginTop: 8 }}>
+            {balanceError} — se estiveres a usar a Twilio ou o modo simulação, esta consulta de saldo é exclusiva do MozeSMS.
+          </div>
+        )}
+        {!loadingBalance && balance && (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 14, marginTop: 10 }}>
+            <div>
+              <div style={{ fontSize: 11.5, color: C.inkSoft, fontWeight: 600 }}>Saldo disponível</div>
+              <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 20, color: C.ink }}>{Number(balance.balance).toFixed(2)} {balance.currency}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11.5, color: C.inkSoft, fontWeight: 600 }}>SMS estimados restantes</div>
+              <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 20, color: balance.estimatedSmsRemaining < 20 ? C.red : C.mint }}>{balance.estimatedSmsRemaining}</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11.5, color: C.inkSoft, fontWeight: 600 }}>Preço por SMS</div>
+              <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 20, color: C.ink }}>{Number(balance.unitPriceMzn).toFixed(2)} MZN</div>
+            </div>
+            <div>
+              <div style={{ fontSize: 11.5, color: C.inkSoft, fontWeight: 600 }}>Plano</div>
+              <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 20, color: C.ink }}>{balance.plano || "—"}</div>
+            </div>
+          </div>
+        )}
+        {!loadingBalance && balance && balance.estimatedSmsRemaining < 20 && (
+          <div style={{ marginTop: 10, fontSize: 12, color: C.amber, fontWeight: 600 }}>
+            Saldo baixo — considera recarregar a conta MozeSMS para não interromper o envio de mensagens.
+          </div>
+        )}
+      </Card>
 
       <Card style={{ marginTop: 16 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 8, marginBottom: 4 }}>
@@ -164,7 +221,7 @@ export default function ConfiguracoesPage() {
             <Label>2. Link do portal (dívidas e estado)</Label>
             <textarea value={form.mensagemPortal} onChange={e => set("mensagemPortal", e.target.value)} rows={5}
               style={{ width: "100%", padding: "9px 12px", borderRadius: 9, border: `1px solid ${C.border}`, fontFamily: bodyFont, fontSize: 13, resize: "vertical" }} />
-            <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 4 }}>Botão "Enviar link" na página Clientes — o cliente vê faturas em dívida, estado do pedido e histórico.</div>
+            <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 4 }}>Botão "Enviar link" na página Clientes — o cliente vê facturas em dívida, estado do pedido e histórico.</div>
           </div>
           <div>
             <Label>3. Promocional</Label>

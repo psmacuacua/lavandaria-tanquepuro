@@ -71,12 +71,12 @@ export default function PortalClientePage() {
               <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 26, color: data.totalDivida > 0 ? C.red : C.mint, marginTop: 4 }}>
                 {formatMT(data.totalDivida)}
               </div>
-              {data.totalDivida === 0 && <div style={{ fontSize: 12, color: C.mint, marginTop: 4 }}>Sem faturas pendentes. Obrigado!</div>}
+              {data.totalDivida === 0 && <div style={{ fontSize: 12, color: C.mint, marginTop: 4 }}>Sem facturas pendentes. Obrigado!</div>}
             </div>
 
             {data.faturasPendentes.length > 0 && (
               <div style={{ background: C.panel, border: `1px solid ${C.border}`, borderRadius: 16, padding: 18, marginBottom: 14 }}>
-                <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 14.5, color: C.ink, marginBottom: 10 }}>Faturas por pagar</div>
+                <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 14.5, color: C.ink, marginBottom: 10 }}>Facturas por pagar</div>
                 {data.faturasPendentes.map(f => (
                   <div key={f.numero} style={{ display: "flex", justifyContent: "space-between", padding: "8px 0", borderTop: `1px solid ${C.border}`, fontSize: 13 }}>
                     <div>

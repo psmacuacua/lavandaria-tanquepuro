@@ -315,7 +315,15 @@ function InvoiceDetail({ invoice, client, settings, onClose, onMarkPaid, onSetMe
     const notifiable = newStatus === "Pronto para Entrega" || newStatus === "Entregue";
     const avisar = notifiable && client?.telefone ? window.confirm(`Enviar SMS a ${client.nome} a avisar "${newStatus}"?`) : false;
     const sms = await onSetStatusOp(invoice.id, newStatus, avisar);
-    if (sms) setSmsMsg(sms.simulated ? "SMS simulado (ver consola do servidor)" : sms.ok ? "SMS enviado!" : sms.error || "Falha ao enviar SMS");
+    if (sms) {
+      if (sms.simulated) setSmsMsg("SMS simulado (ver consola do servidor)");
+      else if (!sms.ok) setSmsMsg(sms.error || "Falha ao enviar SMS");
+      else if (sms.estimatedMessagesRemaining !== undefined && sms.estimatedMessagesRemaining !== null) {
+        setSmsMsg(`SMS enviado! · restam ~${sms.estimatedMessagesRemaining} SMS no saldo (${Number(sms.remainingBalance).toFixed(2)} MZN)`);
+      } else {
+        setSmsMsg("SMS enviado!");
+      }
+    }
   }
 
   const nomeEmpresa = settings?.nome || "Lavandaria Tanque Puro";
