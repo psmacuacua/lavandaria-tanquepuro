@@ -37,7 +37,6 @@ export default function LoginPage() {
             <LogoMark size={30} color="#fff" />
           </div>
           <div style={{ fontFamily: displayFont, fontSize: 26, fontWeight: 700, color: "#fff", letterSpacing: 0.3 }}>Lavandaria Tanque Puro</div>
-          <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13.5, marginTop: 4 }}>Gestão de serviços, faturas e caixa</div>
         </div>
         <form onSubmit={submit} style={{ background: "#fff", borderRadius: 18, padding: 26, boxShadow: "0 20px 50px rgba(10,20,50,0.35)" }}>
           <Label>Utilizador</Label>
