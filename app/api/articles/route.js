@@ -11,6 +11,9 @@ function serialize(a) {
     precoBase: Number(a.precoBase),
     precoDesconto: Number(a.precoDesconto),
     disponivel: a.disponivel,
+    criadoPor: a.criadoPor?.nome || null,
+    atualizadoPor: a.atualizadoPor?.nome || null,
+    atualizadoEm: a.atualizadoEm,
   };
 }
 
@@ -18,7 +21,10 @@ async function GET(req) {
   const session = getSessionFromRequest(req);
   if (!session) return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
 
-  const artigos = await prisma.artigo.findMany({ include: { categoria: true }, orderBy: { id: "asc" } });
+  const artigos = await prisma.artigo.findMany({
+    include: { categoria: true, criadoPor: true, atualizadoPor: true },
+    orderBy: { id: "asc" },
+  });
   return NextResponse.json({ articles: artigos.map(serialize) });
 }
 
@@ -40,8 +46,9 @@ async function POST(req) {
       precoBase,
       precoDesconto: precoDesconto ?? precoBase,
       disponivel: true,
+      criadoPorId: session.id,
     },
-    include: { categoria: true },
+    include: { categoria: true, criadoPor: true, atualizadoPor: true },
   });
   return NextResponse.json({ article: serialize(artigo) }, { status: 201 });
 }

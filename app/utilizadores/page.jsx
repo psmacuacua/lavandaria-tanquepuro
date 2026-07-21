@@ -1,10 +1,10 @@
 "use client";
 import React, { useEffect, useState } from "react";
-import { Plus, Trash2, ShieldCheck, Pencil, Check, X, KeyRound } from "lucide-react";
+import { Plus, Trash2, ShieldCheck, Pencil, Check, X, KeyRound, Eye, FileText, Shirt, PencilLine } from "lucide-react";
 import AppShell from "@/components/AppShell";
 import { useAuth } from "@/context/AuthContext";
 import { api } from "@/lib/apiClient";
-import { C, monoFont, displayFont, Card, Input, Label, Select, Btn, Badge, thStyle, tdStyle } from "@/components/ui";
+import { C, monoFont, displayFont, bodyFont, Card, Input, Label, Select, Btn, Badge, thStyle, tdStyle, formatMT, formatDate } from "@/components/ui";
 
 export default function UtilizadoresPage() {
   const { user } = useAuth();
@@ -17,6 +17,7 @@ export default function UtilizadoresPage() {
   const [resettingId, setResettingId] = useState(null);
   const [resetPassword, setResetPassword] = useState("");
   const [rowMsg, setRowMsg] = useState({});
+  const [activityUserId, setActivityUserId] = useState(null);
 
   useEffect(() => {
     if (user && user.role !== "Admin") return;
@@ -66,7 +67,7 @@ export default function UtilizadoresPage() {
   return (
     <AppShell>
       <h1 style={{ fontFamily: displayFont, fontSize: 26, color: C.ink, marginBottom: 4 }}>Utilizadores</h1>
-      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>Gere quem tem acesso ao sistema</div>
+      <div style={{ color: C.inkSoft, fontSize: 14, marginBottom: 18 }}>Gere quem tem acesso ao sistema — clica num utilizador para ver o resumo de atividade</div>
 
       <Card style={{ marginBottom: 16 }}>
         <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr 1fr auto", gap: 10, alignItems: "end" }}>
@@ -112,10 +113,15 @@ export default function UtilizadoresPage() {
                       </>
                     ) : (
                       <>
-                        <td style={tdStyle}>{u.nome}</td>
+                        <td style={tdStyle}>
+                          <button onClick={() => setActivityUserId(u.id)} style={{ border: "none", background: "none", cursor: "pointer", color: C.ink, fontWeight: 600, textDecoration: "underline", textDecorationColor: C.border, padding: 0 }}>
+                            {u.nome}
+                          </button>
+                        </td>
                         <td style={{ ...tdStyle, fontFamily: monoFont }}>{u.username}</td>
                         <td style={tdStyle}><Badge tone={u.role === "Admin" ? "cobalt" : "mint"}>{u.role === "Admin" && <ShieldCheck size={11} style={{ marginRight: 3, marginBottom: -1 }} />}{u.role}</Badge></td>
                         <td style={{ ...tdStyle, display: "flex", gap: 10 }}>
+                          <button onClick={() => setActivityUserId(u.id)} title="Ver atividade" style={{ border: "none", background: "none", cursor: "pointer" }}><Eye size={14} color={C.cobalt} /></button>
                           <button onClick={() => startEdit(u)} title="Editar" style={{ border: "none", background: "none", cursor: "pointer" }}><Pencil size={14} color={C.inkSoft} /></button>
                           <button onClick={() => startReset(u.id)} title="Repor password" style={{ border: "none", background: "none", cursor: "pointer" }}><KeyRound size={14} color={C.cobalt} /></button>
                           <button onClick={() => removeUser(u.id)} title="Remover" style={{ border: "none", background: "none", cursor: "pointer" }}><Trash2 size={14} color={C.red} /></button>
@@ -143,6 +149,130 @@ export default function UtilizadoresPage() {
           </table>
         )}
       </Card>
+
+      {activityUserId && <ActivityModal userId={activityUserId} onClose={() => setActivityUserId(null)} />}
     </AppShell>
   );
+}
+
+function ActivityModal({ userId, onClose }) {
+  const [data, setData] = useState(null);
+  const [error, setError] = useState("");
+  const [tab, setTab] = useState("faturas");
+
+  useEffect(() => {
+    api.get(`/users/${userId}/activity`).then(setData).catch(e => setError(e.message));
+  }, [userId]);
+
+  return (
+    <div style={{ position: "fixed", inset: 0, background: "rgba(20,28,50,0.55)", display: "flex", alignItems: "center", justifyContent: "center", zIndex: 100, padding: 16 }} onClick={onClose}>
+      <div onClick={e => e.stopPropagation()} style={{ width: "100%", maxWidth: 560, maxHeight: "88vh", overflowY: "auto", background: "#fff", borderRadius: 16, position: "relative", boxShadow: "0 30px 70px rgba(10,20,50,0.4)" }}>
+        <button onClick={onClose} style={{ position: "absolute", top: 16, right: 16, border: "none", background: C.bg, borderRadius: 8, width: 28, height: 28, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center" }}><X size={15} color={C.inkSoft} /></button>
+
+        {error && <div style={{ padding: 22, color: C.red, fontSize: 13.5 }}>{error}</div>}
+        {!data && !error && <div style={{ padding: 22, color: C.inkSoft }}>A carregar...</div>}
+
+        {data && (
+          <>
+            <div style={{ padding: "22px 24px 16px", borderBottom: `1px solid ${C.border}` }}>
+              <div style={{ fontFamily: displayFont, fontWeight: 700, fontSize: 18, color: C.ink }}>{data.utilizador.nome}</div>
+              <div style={{ fontSize: 12.5, color: C.inkSoft, marginTop: 2 }}>{data.utilizador.username} · {data.utilizador.role} · desde {formatDate(data.utilizador.criadoEm)}</div>
+
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 10, marginTop: 16 }}>
+                <div>
+                  <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 600 }}>Facturas</div>
+                  <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 18, color: C.ink }}>{data.resumo.totalFaturas}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 600 }}>Facturado (pago)</div>
+                  <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 15, color: C.mint }}>{formatMT(data.resumo.totalFaturado)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 600 }}>Pendente</div>
+                  <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 15, color: C.amber }}>{formatMT(data.resumo.totalPendente)}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 600 }}>Artigos criados</div>
+                  <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 18, color: C.ink }}>{data.resumo.totalArtigosCriados}</div>
+                </div>
+                <div>
+                  <div style={{ fontSize: 11, color: C.inkSoft, fontWeight: 600 }}>Artigos actualizados</div>
+                  <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 18, color: C.ink }}>{data.resumo.totalArtigosAtualizados}</div>
+                </div>
+              </div>
+            </div>
+
+            <div style={{ display: "flex", gap: 6, padding: "12px 24px 0" }}>
+              <button onClick={() => setTab("faturas")} style={tabBtn(tab === "faturas")}><FileText size={13} /> Facturas</button>
+              <button onClick={() => setTab("criados")} style={tabBtn(tab === "criados")}><Shirt size={13} /> Artigos criados</button>
+              <button onClick={() => setTab("atualizados")} style={tabBtn(tab === "atualizados")}><PencilLine size={13} /> Artigos actualizados</button>
+            </div>
+
+            <div style={{ padding: "12px 24px 24px" }}>
+              {tab === "faturas" && (
+                data.faturas.length === 0 ? <EmptyMsg text="Ainda não criou nenhuma factura." /> : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {data.faturas.map(f => (
+                      <div key={f.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{f.numero} · {f.cliente}</div>
+                          <div style={{ fontSize: 11, color: C.inkSoft }}>{formatDate(f.data)}</div>
+                        </div>
+                        <div style={{ textAlign: "right" }}>
+                          <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 13 }}>{formatMT(f.total)}</div>
+                          <Badge tone={f.status === "Pago" ? "mint" : "amber"}>{f.status}</Badge>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+              {tab === "criados" && (
+                data.artigosCriados.length === 0 ? <EmptyMsg text="Ainda não criou nenhum artigo." /> : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {data.artigosCriados.map(a => (
+                      <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{a.nome}</div>
+                          <div style={{ fontSize: 11, color: C.inkSoft }}>{a.categoria} · {formatDate(a.criadoEm)}</div>
+                        </div>
+                        <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 13 }}>{formatMT(a.precoBase)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+              {tab === "atualizados" && (
+                data.artigosAtualizados.length === 0 ? <EmptyMsg text="Ainda não actualizou nenhum artigo." /> : (
+                  <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+                    {data.artigosAtualizados.map(a => (
+                      <div key={a.id} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", borderBottom: `1px solid ${C.border}`, paddingBottom: 8 }}>
+                        <div>
+                          <div style={{ fontSize: 13, fontWeight: 600, color: C.ink }}>{a.nome}</div>
+                          <div style={{ fontSize: 11, color: C.inkSoft }}>{a.categoria} · {formatDate(a.atualizadoEm)}</div>
+                        </div>
+                        <div style={{ fontFamily: monoFont, fontWeight: 700, fontSize: 13 }}>{formatMT(a.precoBase)}</div>
+                      </div>
+                    ))}
+                  </div>
+                )
+              )}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  );
+}
+
+function EmptyMsg({ text }) {
+  return <div style={{ color: C.inkSoft, fontSize: 13, textAlign: "center", padding: "20px 0" }}>{text}</div>;
+}
+
+function tabBtn(active) {
+  return {
+    display: "inline-flex", alignItems: "center", gap: 5, padding: "7px 13px", borderRadius: 999,
+    border: `1px solid ${active ? C.cobalt : C.border}`, background: active ? C.cobaltSoft : "#fff",
+    color: active ? C.cobalt : C.inkSoft, fontWeight: 600, fontSize: 12, cursor: "pointer", fontFamily: bodyFont,
+  };
 }

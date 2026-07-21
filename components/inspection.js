@@ -8,17 +8,17 @@ export const SOBRETAXA_MANCHA_DIFICIL = 50; // MT
 
 export const DEFEITOS_OPCOES = [
   { key: "furosRasgos", label: "Furos, rasgos ou descosturas (gola, axilas, bolsos, barras)" },
-  { key: "desgasteExcessivo", label: "Desgaste excessivo / tecido puído / pilling" },
+  { key: "desgasteExcessivo", label: "Desgaste excessivo / tecido puído / borboto" },
   { key: "botoesFrouxosFaltando", label: "Botões frouxos ou em falta" },
-  { key: "ziperTravadoQuebrado", label: "Zíper travado ou quebrado" },
+  { key: "ziperTravadoQuebrado", label: "Fecho de correr encravado ou partido" },
   { key: "elasticoVencido", label: "Elástico vencido" },
-  { key: "fechoDanificado", label: "Fecho danificado" },
+  { key: "fechoDanificado", label: "Colchete ou mola danificados" },
 ];
 
 export const DEFORMACOES_OPCOES = [
   { key: "laEncolhida", label: "Lã encolhida" },
   { key: "golaTorta", label: "Gola torta" },
-  { key: "ternoDesalinhado", label: "Terno desalinhado" },
+  { key: "ternoDesalinhado", label: "Fato desalinhado" },
 ];
 
 export function novaCondicaoVazia() {

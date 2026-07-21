@@ -187,7 +187,14 @@ no recibo/fatura, tudo guardado na base de dados (tabela `empresa_config`, uma �
   (endereço, NUIT, contacto, email, website, conta bancária) aparecem no recibo; nome e
   logótipo aparecem sempre.
 
-## 12. Estrutura do projeto
+## 12. Resumo de actividade por utilizador (Admin)
+
+Na página **Utilizadores**, clicar no nome de um utilizador (ou no ícone de olho) abre um
+resumo com: quantas facturas criou, quanto facturou (pago/pendente), quantos artigos criou
+e quantos actualizou — com listas detalhadas em separadores. Os artigos guardam agora
+`criado_por_id`/`atualizado_por_id` (`app/api/users/[id]/activity/route.js`).
+
+## 13. Estrutura do projeto
 
 ```
 prisma/schema.prisma       modelos da base de dados (categorias, clientes, utilizadores,
@@ -206,7 +213,7 @@ app/faturacao, app/clientes,
 app/artigos, app/utilizadores  páginas da aplicação
 ```
 
-## 13. Notas para produção
+## 14. Notas para produção
 
 - As palavras-passe já ficam com hash (`bcryptjs`) na base de dados — nunca em texto simples.
 - Troca `JWT_SECRET` por um valor longo e aleatório antes de publicar.
@@ -225,3 +232,7 @@ app/artigos, app/utilizadores  páginas da aplicação
 > inspeção, a sobretaxa passou a ser por artigo (e configurável), e foram adicionados o
 > portal do cliente e as 3 mensagens SMS personalizáveis. Corre `npx prisma db push` outra
 > vez, ou aplica `prisma/fix_missing_columns_v3.sql` manualmente.
+>
+> Versão mais recente: adicionado o resumo de actividade por utilizador (facturas criadas,
+> artigos criados/actualizados). Corre `npx prisma db push` outra vez, ou aplica
+> `prisma/fix_missing_columns_v4.sql` manualmente.

@@ -13,12 +13,17 @@ async function PATCH(req, { params }) {
   if (body.precoDesconto !== undefined) data.precoDesconto = body.precoDesconto;
   if (body.disponivel !== undefined) data.disponivel = body.disponivel;
   if (body.nome !== undefined) data.nome = body.nome;
+  data.atualizadoPorId = session.id;
 
-  const artigo = await prisma.artigo.update({ where: { id }, data, include: { categoria: true } });
+  const artigo = await prisma.artigo.update({
+    where: { id }, data,
+    include: { categoria: true, criadoPor: true, atualizadoPor: true },
+  });
   return NextResponse.json({
     article: {
       id: artigo.id, nome: artigo.nome, categoria: artigo.categoria.nome,
       precoBase: Number(artigo.precoBase), precoDesconto: Number(artigo.precoDesconto), disponivel: artigo.disponivel,
+      criadoPor: artigo.criadoPor?.nome || null, atualizadoPor: artigo.atualizadoPor?.nome || null, atualizadoEm: artigo.atualizadoEm,
     },
   });
 }

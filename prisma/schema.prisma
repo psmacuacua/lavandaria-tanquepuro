@@ -18,14 +18,16 @@ model Categoria {
 }
 
 model Utilizador {
-  id                 Int       @id @default(autoincrement())
-  username           String    @unique @db.VarChar(50)
-  passwordHash       String    @map("password_hash") @db.VarChar(255)
-  nome               String    @db.VarChar(120)
-  role               Role      @default(Funcionario)
-  mustChangePassword Boolean   @default(true) @map("must_change_password")
-  criadoEm           DateTime  @default(now()) @map("criado_em")
+  id                 Int        @id @default(autoincrement())
+  username           String     @unique @db.VarChar(50)
+  passwordHash       String     @map("password_hash") @db.VarChar(255)
+  nome               String     @db.VarChar(120)
+  role               Role       @default(Funcionario)
+  mustChangePassword Boolean    @default(true) @map("must_change_password")
+  criadoEm           DateTime   @default(now()) @map("criado_em")
   faturas            Fatura[]
+  artigosCriados     Artigo[]   @relation("ArtigoCriadoPor")
+  artigosAtualizados Artigo[]   @relation("ArtigoAtualizadoPor")
 
   @@map("utilizadores")
 }
@@ -48,14 +50,20 @@ model Cliente {
 }
 
 model Artigo {
-  id            Int           @id @default(autoincrement())
-  categoriaId   Int           @map("categoria_id")
-  categoria     Categoria     @relation(fields: [categoriaId], references: [id])
-  nome          String        @db.VarChar(150)
-  precoBase     Decimal       @map("preco_base") @db.Decimal(10, 2)
-  precoDesconto Decimal       @map("preco_desconto") @db.Decimal(10, 2)
-  disponivel    Boolean       @default(true)
-  itens         FaturaItem[]
+  id              Int          @id @default(autoincrement())
+  categoriaId     Int          @map("categoria_id")
+  categoria       Categoria    @relation(fields: [categoriaId], references: [id])
+  nome            String       @db.VarChar(150)
+  precoBase       Decimal      @map("preco_base") @db.Decimal(10, 2)
+  precoDesconto   Decimal      @map("preco_desconto") @db.Decimal(10, 2)
+  disponivel      Boolean      @default(true)
+  criadoPorId     Int?         @map("criado_por_id")
+  criadoPor       Utilizador?  @relation("ArtigoCriadoPor", fields: [criadoPorId], references: [id])
+  criadoEm        DateTime     @default(now()) @map("criado_em")
+  atualizadoPorId Int?         @map("atualizado_por_id")
+  atualizadoPor   Utilizador?  @relation("ArtigoAtualizadoPor", fields: [atualizadoPorId], references: [id])
+  atualizadoEm    DateTime?    @updatedAt @map("atualizado_em")
+  itens           FaturaItem[]
 
   @@index([categoriaId])
   @@map("artigos")
@@ -76,10 +84,10 @@ enum StatusOperacional {
 
 enum MetodoPagamento {
   Dinheiro
-  M_Pesa               @map("M-Pesa")
-  e_Mola               @map("e-Mola")
+  M_Pesa                 @map("M-Pesa")
+  e_Mola                 @map("e-Mola")
   mKesh
-  Cartao               @map("Cartão")
+  Cartao                 @map("Cartão")
   Transferencia_Bancaria @map("Transferência Bancária")
 }
 
@@ -99,7 +107,7 @@ model Fatura {
   status            StatusPagamento   @default(Pendente)
   statusOperacional StatusOperacional @default(Pendente) @map("status_operacional")
   metodoPagamento   MetodoPagamento?  @map("metodo_pagamento")
-  dataPagamento      DateTime?        @map("data_pagamento")
+  dataPagamento     DateTime?         @map("data_pagamento")
   itens             FaturaItem[]
 
   @@index([clienteId])
@@ -126,9 +134,12 @@ model EmpresaConfig {
   mostrarContacto        Boolean  @default(true) @map("mostrar_contacto")
   mostrarWebsite         Boolean  @default(false) @map("mostrar_website")
   mostrarContaBancaria   Boolean  @default(false) @map("mostrar_conta_bancaria")
-  mensagemPronto         String   @default("Olá {nome}, a sua roupa na {empresa} está pronta para entrega. Obrigado pela preferência!") @map("mensagem_pronto") @db.Text
-  mensagemPortal         String   @default("Olá {nome}, veja o estado do seu pedido e as faturas pendentes aqui: {link}") @map("mensagem_portal") @db.Text
-  mensagemPromocional    String   @default("Olá {nome}, aproveite: lave mais de 5 artigos numa só entrega e ganhe desconto especial na {empresa}!") @map("mensagem_promocional") @db.Text
+  
+  // Corrigido: De @db.Text para @db.VarChar(500) para permitir @default
+  mensagemPronto         String   @default("Olá {nome}, a sua roupa na {empresa} está pronta para entrega. Obrigado pela preferência!") @map("mensagem_pronto") @db.VarChar(500)
+  mensagemPortal         String   @default("Olá {nome}, veja o estado do seu pedido e as faturas pendentes aqui: {link}") @map("mensagem_portal") @db.VarChar(500)
+  mensagemPromocional    String   @default("Olá {nome}, aproveite: lave mais de 5 artigos numa só entrega e ganhe desconto especial na {empresa}!") @map("mensagem_promocional") @db.VarChar(500)
+  
   atualizadoEm           DateTime @updatedAt @map("atualizado_em")
 
   @@map("empresa_config")
