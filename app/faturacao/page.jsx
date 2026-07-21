@@ -114,6 +114,15 @@ export default function FaturacaoPage() {
     setViewInvoice(v => v ? { ...v, ...d.invoice } : v);
     return d.sms;
   }
+  const [rowSmsMsg, setRowSmsMsg] = useState({});
+  async function avisarProntoRapido(inv) {
+    setRowSmsMsg(m => ({ ...m, [inv.id]: "A enviar..." }));
+    const sms = await setStatusOp(inv.id, "Pronto para Entrega", true);
+    if (!sms) { setRowSmsMsg(m => ({ ...m, [inv.id]: undefined })); return; }
+    if (sms.simulated) setRowSmsMsg(m => ({ ...m, [inv.id]: "SMS simulado (ver consola do servidor)" }));
+    else if (!sms.ok) setRowSmsMsg(m => ({ ...m, [inv.id]: sms.error || "Falha ao enviar SMS" }));
+    else setRowSmsMsg(m => ({ ...m, [inv.id]: "SMS enviado!" }));
+  }
   async function updateItemCondicao(faturaId, itemId, condicao) {
     const d = await api.patch(`/invoices/${faturaId}/items/${itemId}`, { condicao });
     setInvoices(prev => prev.map(inv => {
@@ -272,20 +281,33 @@ export default function FaturacaoPage() {
                     {filteredInvoices.map(inv => {
                       const so = inv.statusOperacional || "Pendente";
                       const soMeta = STATUS_META[so];
+                      const cliente = clients.find(c => c.id === inv.clienteId);
                       return (
-                        <tr key={inv.id} style={{ borderTop: `1px solid ${C.border}` }}>
-                          <td style={{ ...tdStyle, fontFamily: monoFont }}>{inv.numero}</td>
-                          <td style={tdStyle}>{formatDate(inv.data)}</td>
-                          <td style={tdStyle}>{clientName(inv.clienteId)}</td>
-                          <td style={{ ...tdStyle, fontFamily: monoFont, fontWeight: 700 }}>{formatMT(inv.total)}</td>
-                          <td style={tdStyle}><Badge tone={inv.status === "Pago" ? "mint" : "amber"}>{inv.status}</Badge></td>
-                          <td style={tdStyle}>
-                            <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: soMeta.soft, color: soMeta.color, fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>
-                              <soMeta.icon size={11} /> {so}
-                            </span>
-                          </td>
-                          <td style={tdStyle}><button onClick={() => setViewInvoice(inv)} style={{ border: "none", background: "none", cursor: "pointer", color: C.cobalt, display: "flex", alignItems: "center", gap: 4, fontWeight: 600, fontSize: 12.5 }}>Ver <ChevronRight size={14} /></button></td>
-                        </tr>
+                        <React.Fragment key={inv.id}>
+                          <tr style={{ borderTop: `1px solid ${C.border}` }}>
+                            <td style={{ ...tdStyle, fontFamily: monoFont }}>{inv.numero}</td>
+                            <td style={tdStyle}>{formatDate(inv.data)}</td>
+                            <td style={tdStyle}>{clientName(inv.clienteId)}</td>
+                            <td style={{ ...tdStyle, fontFamily: monoFont, fontWeight: 700 }}>{formatMT(inv.total)}</td>
+                            <td style={tdStyle}><Badge tone={inv.status === "Pago" ? "mint" : "amber"}>{inv.status}</Badge></td>
+                            <td style={tdStyle}>
+                              <span style={{ display: "inline-flex", alignItems: "center", gap: 5, background: soMeta.soft, color: soMeta.color, fontSize: 11.5, fontWeight: 700, padding: "3px 10px", borderRadius: 999 }}>
+                                <soMeta.icon size={11} /> {so}
+                              </span>
+                            </td>
+                            <td style={{ ...tdStyle, display: "flex", gap: 12, alignItems: "center" }}>
+                              {cliente?.telefone && so !== "Entregue" && (
+                                <button onClick={() => avisarProntoRapido(inv)} title="Avisar cliente: roupa pronta" style={{ border: "none", background: "none", cursor: "pointer", color: C.mint, display: "flex", alignItems: "center" }}>
+                                  <MessageSquare size={14} />
+                                </button>
+                              )}
+                              <button onClick={() => setViewInvoice(inv)} style={{ border: "none", background: "none", cursor: "pointer", color: C.cobalt, display: "flex", alignItems: "center", gap: 4, fontWeight: 600, fontSize: 12.5 }}>Ver <ChevronRight size={14} /></button>
+                            </td>
+                          </tr>
+                          {rowSmsMsg[inv.id] && (
+                            <tr><td colSpan={7} style={{ padding: "0 10px 8px", fontSize: 11, color: C.inkSoft }}>{rowSmsMsg[inv.id]}</td></tr>
+                          )}
+                        </React.Fragment>
                       );
                     })}
                     {filteredInvoices.length === 0 && <tr><td colSpan={7} style={{ padding: 20, color: C.inkSoft, textAlign: "center" }}>Sem facturas.</td></tr>}
@@ -312,17 +334,35 @@ function InvoiceDetail({ invoice, client, settings, onClose, onMarkPaid, onSetMe
   const [inspectingItem, setInspectingItem] = useState(null);
 
   async function handleStatusChange(newStatus) {
-    const notifiable = newStatus === "Pronto para Entrega" || newStatus === "Entregue";
-    const avisar = notifiable && client?.telefone ? window.confirm(`Enviar SMS a ${client.nome} a avisar "${newStatus}"?`) : false;
+    if (newStatus !== "Pronto para Entrega") {
+      await onSetStatusOp(invoice.id, newStatus, false);
+      return;
+    }
+    if (!client?.telefone) {
+      alert("Este cliente não tem telefone registado — o estado vai mudar, mas não é possível enviar SMS.");
+      await onSetStatusOp(invoice.id, newStatus, false);
+      return;
+    }
+    const avisar = window.confirm(`Enviar SMS a ${client.nome} a avisar "Pronto para Entrega"?`);
+    if (avisar) setSmsMsg("A enviar...");
     const sms = await onSetStatusOp(invoice.id, newStatus, avisar);
-    if (sms) {
-      if (sms.simulated) setSmsMsg("SMS simulado (ver consola do servidor)");
-      else if (!sms.ok) setSmsMsg(sms.error || "Falha ao enviar SMS");
-      else if (sms.estimatedMessagesRemaining !== undefined && sms.estimatedMessagesRemaining !== null) {
-        setSmsMsg(`SMS enviado! · restam ~${sms.estimatedMessagesRemaining} SMS no saldo (${Number(sms.remainingBalance).toFixed(2)} MZN)`);
-      } else {
-        setSmsMsg("SMS enviado!");
-      }
+    mostrarResultadoSms(sms);
+  }
+
+  async function avisarRoupaPronta() {
+    setSmsMsg("A enviar...");
+    const sms = await onSetStatusOp(invoice.id, "Pronto para Entrega", true);
+    mostrarResultadoSms(sms);
+  }
+
+  function mostrarResultadoSms(sms) {
+    if (!sms) return;
+    if (sms.simulated) setSmsMsg("SMS simulado (ver consola do servidor)");
+    else if (!sms.ok) setSmsMsg(sms.error || "Falha ao enviar SMS");
+    else if (sms.estimatedMessagesRemaining !== undefined && sms.estimatedMessagesRemaining !== null) {
+      setSmsMsg(`SMS enviado! · restam ~${sms.estimatedMessagesRemaining} SMS no saldo (${Number(sms.remainingBalance).toFixed(2)} MZN)`);
+    } else {
+      setSmsMsg("SMS enviado!");
     }
   }
 
@@ -387,10 +427,14 @@ function InvoiceDetail({ invoice, client, settings, onClose, onMarkPaid, onSetMe
 
           <div style={{ marginTop: 14, fontFamily: bodyFont }}>
             <Label>Estado do pedido</Label>
-            <Select value={so} onChange={e => handleStatusChange(e.target.value)} style={{ fontSize: 12.5 }}>
+            <Select value={so} onChange={e => handleStatusChange(e.target.value)} style={{ fontSize: 12.5, marginBottom: 10 }}>
               {ORDER_STATUSES.map(s => <option key={s} value={s}>{s}</option>)}
             </Select>
-            {smsMsg && <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 6, display: "flex", alignItems: "center", gap: 5 }}><MessageSquare size={12} /> {smsMsg}</div>}
+            <Btn onClick={avisarRoupaPronta} icon={MessageSquare} variant={so === "Pronto para Entrega" ? "success" : "subtle"} disabled={!client?.telefone}>
+              Avisar cliente: roupa pronta
+            </Btn>
+            {!client?.telefone && <div style={{ fontSize: 11, color: C.inkSoft, marginTop: 5 }}>Este cliente não tem telefone registado.</div>}
+            {smsMsg && <div style={{ fontSize: 11.5, color: C.inkSoft, marginTop: 8, display: "flex", alignItems: "center", gap: 5 }}><MessageSquare size={12} /> {smsMsg}</div>}
           </div>
 
           <div style={{ marginTop: 14, display: "flex", alignItems: "center", justifyContent: "space-between", fontFamily: bodyFont }}>
