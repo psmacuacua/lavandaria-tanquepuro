@@ -27,8 +27,23 @@ async function DELETE(req, { params }) {
   if (id === 1) {
     return NextResponse.json({ error: "Não é possível remover o Cliente Balcão." }, { status: 400 });
   }
-  await prisma.cliente.delete({ where: { id } });
-  return NextResponse.json({ ok: true });
+
+  const totalFaturas = await prisma.fatura.count({ where: { clienteId: id } });
+  if (totalFaturas > 0) {
+    return NextResponse.json({
+      error: `Este cliente tem ${totalFaturas} factura${totalFaturas > 1 ? "s" : ""} associada${totalFaturas > 1 ? "s" : ""} e não pode ser removido, para preservar o histórico. Podes editar os dados dele (nome, telefone, endereço) em vez de o apagar.`,
+    }, { status: 400 });
+  }
+
+  try {
+    await prisma.cliente.delete({ where: { id } });
+    return NextResponse.json({ ok: true });
+  } catch (e) {
+    if (e.code === "P2003") {
+      return NextResponse.json({ error: "Este cliente ainda está associado a registos existentes e não pode ser removido." }, { status: 400 });
+    }
+    throw e;
+  }
 }
 
 module.exports = { PATCH, DELETE };

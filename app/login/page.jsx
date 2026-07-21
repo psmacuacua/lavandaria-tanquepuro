@@ -1,11 +1,23 @@
 "use client";
-import React, { useState } from "react";
+import React, { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Info } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 import { C, displayFont, bodyFont, Input, Label, Btn } from "@/components/ui";
 import LogoMark from "@/components/LogoMark";
 
 export default function LoginPage() {
+  return (
+    <Suspense fallback={null}>
+      <LoginForm />
+    </Suspense>
+  );
+}
+
+function LoginForm() {
   const { login } = useAuth();
+  const searchParams = useSearchParams();
+  const sessaoPorInatividade = searchParams.get("motivo") === "inatividade";
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
@@ -40,6 +52,12 @@ export default function LoginPage() {
           <div style={{ color: "rgba(255,255,255,0.75)", fontSize: 13.5, marginTop: 4 }}>Gestão de serviços, facturas e caixa</div>
         </div>
         <form onSubmit={submit} style={{ background: "#fff", borderRadius: 18, padding: 26, boxShadow: "0 20px 50px rgba(10,20,50,0.35)" }}>
+          {sessaoPorInatividade && (
+            <div style={{ display: "flex", gap: 8, alignItems: "flex-start", background: C.amberSoft, color: C.amber, padding: "10px 12px", borderRadius: 10, marginBottom: 16, fontSize: 12.5 }}>
+              <Info size={15} style={{ flexShrink: 0, marginTop: 1 }} />
+              <div>A tua sessão foi fechada por inatividade (mais de 15 minutos sem uso). Entra novamente para continuar.</div>
+            </div>
+          )}
           <Label>Utilizador</Label>
           <Input autoFocus value={username} onChange={e => setUsername(e.target.value)} placeholder="admin" style={{ marginBottom: 14 }} />
           <Label>Palavra-passe</Label>

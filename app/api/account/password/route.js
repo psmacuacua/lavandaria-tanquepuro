@@ -1,6 +1,6 @@
 const { NextResponse } = require("next/server");
 const { prisma } = require("@/lib/prisma");
-const { getSessionFromRequest, signSession, COOKIE_NAME } = require("@/lib/auth");
+const { getSessionFromRequest, signSession, COOKIE_NAME, SESSION_MAX_AGE_SECONDS } = require("@/lib/auth");
 const bcrypt = require("bcryptjs");
 
 /** Body: { currentPassword, newPassword } — o utilizador autenticado altera a sua própria password. */
@@ -32,7 +32,7 @@ async function POST(req) {
   const token = signSession(updated);
   const res = NextResponse.json({ ok: true });
   res.cookies.set(COOKIE_NAME, token, {
-    httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: 60 * 60 * 12,
+    httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV === "production", path: "/", maxAge: SESSION_MAX_AGE_SECONDS,
   });
   return res;
 }

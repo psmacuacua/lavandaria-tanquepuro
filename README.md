@@ -194,7 +194,18 @@ resumo com: quantas facturas criou, quanto facturou (pago/pendente), quantos art
 e quantos actualizou — com listas detalhadas em separadores. Os artigos guardam agora
 `criado_por_id`/`atualizado_por_id` (`app/api/users/[id]/activity/route.js`).
 
-## 13. Estrutura do projeto
+## 13. Fecho de sessão por inatividade
+
+A sessão fecha automaticamente ao fim de **15 minutos sem atividade real** (rato, teclado,
+toque ou scroll) — não depende de haver pedidos ao servidor entretanto, por isso um
+utilizador que só está a ler o ecrã sem tocar em nada também é desligado. Implementado em
+`context/AuthContext.js`. O cookie de sessão em si tem um tecto de segurança de 12 horas
+(`lib/auth.js`), mas na prática o fecho por inatividade acontece sempre primeiro.
+
+Ao ser desligado por inatividade, o ecrã de login mostra um aviso explicando o motivo.
+Para mudar os 15 minutos, ajusta `INACTIVITY_TIMEOUT_MS` no topo de `context/AuthContext.js`.
+
+## 14. Estrutura do projeto
 
 ```
 prisma/schema.prisma       modelos da base de dados (categorias, clientes, utilizadores,
@@ -213,7 +224,7 @@ app/faturacao, app/clientes,
 app/artigos, app/utilizadores  páginas da aplicação
 ```
 
-## 14. Notas para produção
+## 15. Notas para produção
 
 - As palavras-passe já ficam com hash (`bcryptjs`) na base de dados — nunca em texto simples.
 - Troca `JWT_SECRET` por um valor longo e aleatório antes de publicar.

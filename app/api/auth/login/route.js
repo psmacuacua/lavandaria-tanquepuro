@@ -1,6 +1,6 @@
 const { prisma } = require("@/lib/prisma");
 const bcrypt = require("bcryptjs");
-const { signSession, COOKIE_NAME } = require("@/lib/auth");
+const { signSession, COOKIE_NAME, SESSION_MAX_AGE_SECONDS } = require("@/lib/auth");
 const { NextResponse } = require("next/server");
 
 async function POST(req) {
@@ -28,7 +28,7 @@ async function POST(req) {
     sameSite: "lax",
     secure: process.env.NODE_ENV === "production",
     path: "/",
-    maxAge: 60 * 60 * 12,
+    maxAge: SESSION_MAX_AGE_SECONDS,
   });
   return res;
 }
